@@ -25,7 +25,7 @@ public class Farm {
     private static int days;
 
     private Weather weather;
-    private String cmd;
+    private String cmd = "";
 
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
@@ -48,10 +48,7 @@ public class Farm {
             print(day + " " + days);
             weather();
             update();
-            if(!equals(cmd, "skip")) {
-                harvest();
-            }
-
+            if(!equals(cmd, "skip")) { harvest(); }
             do {
                 cmd = run();
             } while (!equals(cmd, "skip") && !equals(cmd, "end"));
@@ -62,6 +59,7 @@ public class Farm {
     private String run() {
         cmd = reply(Localization.lang.t("game.cmd"));
         switch (cmd.toLowerCase()) {
+            case "harv" -> harvest();
             case "replant" -> plant();
             case "stats" -> showStats();
             case "sell" -> sellCrops();
@@ -83,7 +81,9 @@ public class Farm {
                 } else {
                     System.out.print(crop.canHarvest() ? "[H] " :
                             "[" + crop.getId().getName().charAt(0) + "] ");
-                    crop.grow();
+                    if(!equals(weather, Weather.DRY)) {
+                        crop.grow();
+                    }
                 }
             }
             println();
@@ -102,11 +102,12 @@ public class Farm {
             }
         }
 
-        for(Map.Entry<CropID, Integer> entry : todayHarvest.entrySet()) {
-            print(Localization.lang.t("game.yields",
-                    entry.getKey().getName(), entry.getValue()));
+        if(!todayHarvest.isEmpty()) {
+            for(Map.Entry<CropID, Integer> entry : todayHarvest.entrySet()) {
+                print(Localization.lang.t("game.yields",
+                        entry.getKey().getName(), entry.getValue()));
+            }
         }
-        update();
     }
 
     private void weather() {
@@ -124,6 +125,7 @@ public class Farm {
         print(Localization.lang.t("game.sleep"));
         harvest();
         days++;
+        cmd = "skip";
     }
 
     private void sellCrops() {
@@ -189,7 +191,10 @@ public class Farm {
         System.out.println();
     }
 
-    @SuppressWarnings("all")
+    private boolean equals(Object str1, Object str2) {
+        return str1.equals(str2);
+    }
+
     private boolean equals(String str1, String str2) {
         return str1.equalsIgnoreCase(str2);
     }
