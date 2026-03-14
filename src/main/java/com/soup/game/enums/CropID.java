@@ -7,32 +7,37 @@ import java.util.Random;
 
 @Data
 public enum CropID {
-    WHEAT("crop.wheat", 8, 2, 4),
-    CABBAGE("crop.cabbage", 8, 24, 6),
-    CORN("crop.corn", 16, 4, 6),
-    CARROT("crop.carrot", 8, 8, 10),
-    POTATO("crop.potato", 16, 16, 12),
-    TOMATO("crop.tomato", 16, 8, 12),
-    STRAWBERRY("crop.strawberry", 24, 16, 16),
-    APPLE("crop.apple", 32, 16, 16),
-    GRAPE("crop.grape", 16, 16, 24),
-    PUMPKIN("crop.pumpkin", 32, 24, 32);
+    WHEAT("crop.wheat", 8, 5, 4, true),
+    CABBAGE("crop.cabbage", 8, 10, 6, false),
+    CORN("crop.corn", 16, 15, 6, false),
+    CARROT("crop.carrot", 8, 20, 10, false),
+    POTATO("crop.potato", 16, 15, 12, true),
+    TOMATO("crop.tomato", 16, 15, 12, true),
+    STRAWBERRY("crop.strawberry", 10, 16, 16, true),
+    APPLE("crop.apple", 32, 20, 16, false),
+    GRAPE("crop.grape", 16, 25, 24, false),
+    PUMPKIN("crop.pumpkin", 32, 25, 32, true);
 
     private static final Random random = new Random();
     private final String name;
     private final int yield;
     private final int days;
     private final int value;
+    private final boolean canRegrow;
 
-    CropID(String name, int yield, int days, int value) {
+    CropID(String name, int yield, int days, int value, boolean canRegrow) {
         this.name = name;
         this.yield = yield;
         this.days = days;
         this.value = value;
+        this.canRegrow = canRegrow;
     }
 
     public static CropID random() {
         return CropID.values()[random.nextInt(0, CropID.values().length - 1)];
+    }
+    public boolean regrows() {
+        return canRegrow;
     }
     public String getName() {
         return Localization.lang.t(name);
