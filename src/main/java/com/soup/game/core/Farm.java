@@ -2,6 +2,7 @@ package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
 import com.soup.game.enums.CropID;
+import com.soup.game.enums.GrowthStage;
 import com.soup.game.enums.Weather;
 import com.soup.game.service.Localization;
 
@@ -14,15 +15,18 @@ import java.util.Scanner;
 public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
+    private final int[][] indices;
     private final Map<CropID, Integer> harvest;
+    private final Map<String, Runnable> commands;
     private final String user;
     private final String day;
     private final String title;
     private final Scanner scan;
 
-    private static int SIZE = 16;
-    private static int coin;
-    private static int days;
+    private int SIZE = 16;
+    private int coin;
+    private int days;
+    private int dryDay;
 
     private Weather weather;
     private String cmd = "";
@@ -30,12 +34,17 @@ public class Farm {
 
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
+        this.indices = new int[SIZE * SIZE][2];
         Localization.lang.setLocale(Locale.forLanguageTag("en"));
         final String NAME = Localization.lang.t("game.farm");
         this.user = Paths.get(System.getProperty("user.home")).getFileName().toString();
         this.title = Localization.lang.t("game.farm.title", user, NAME);
         println(Localization.lang.t("game.welcome", title));
+
         this.harvest = new LinkedHashMap<>();
+        this.commands = new LinkedHashMap<>();
+        populate();
+
         this.scan = new Scanner(System.in);
         this.day = Localization.lang.t("game.day");
         this.weather = Weather.SUNNY;
@@ -53,6 +62,7 @@ public class Farm {
         do {
             println(day + " " + days);
             weather();
+            grow();
             update();
             if(!equals(cmd, "skip")) { harvest(); }
             do {
@@ -63,43 +73,57 @@ public class Farm {
 
     private String run() {
         cmd = reply(user);
-        switch (cmd.toLowerCase()) {
-            case ".", ".." -> redo();
-            case "harv", "harvest" -> harvest();
-            case "show" -> update();
-            case "replant" -> plant();
-            case "stats" -> showStats();
-            case "sell" -> sellCrops();
-            case "buy" -> buyPlot();
-            case "sleep" -> sleep();
-            case "skip" -> days++;
-            case "end" -> {}
-        }
-        if(!equals(cmd, ".") || !equals(cmd, "..")) {
+        Runnable action = commands.get(cmd.toLowerCase());
+        if(action != null) { action.run(); }
+        if(!equals(cmd, ".") && !equals(cmd, "..")) {
             previousCmd = cmd;
         }
         return cmd;
     }
 
-    private void redo() {
-        cmd = previousCmd;
+    private void populate() {
+        commands.put(".", this::redo);
+        commands.put("harvest", this::harvest);
+        commands.put("replant", this::plant);
+        commands.put("show", this::update);
+        commands.put("inv", this::showInventory);
+        commands.put("sell", this::sellCrops);
+        commands.put("buy", this::buyPlot);
+        commands.put("stats", this::showStats);
+        commands.put("sleep", this::sleep);
+        commands.put("skip", () -> days++);
+        commands.put("end", () -> {});
     }
 
     private void update() {
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
                 Crop crop = crops[row][col];
+                if(dryDay > 4) {
+                    print("[X] ");
+                    if(crop != null) { crop.wither(); }
+                    dryDay = 0;
+                    continue;
+                }
                 if(crop == null) {
-                    System.out.print("[ ] ");
+                    print("[ ] ");
                 } else {
-                    System.out.print(crop.canHarvest() ? "[H] " :
-                            "[" + crop.getId().getName().charAt(0) + "] ");
-                    if(!equals(weather, Weather.DRY)) {
-                        crop.grow();
-                    }
+                    print(crop.canHarvest() ? "[H] " :
+                            "[" + crop.getStage().name().charAt(0) + "] ");
                 }
             }
             println();
+        }
+
+        dryDay = 0;
+    }
+
+    private void grow() {
+        if(!equals(weather, Weather.DRY)) {
+            for(int[] pos : index()) {
+                Crop crop = crops[pos[0]][pos[1]];
+                if(crop != null) crop.grow();
+            }
         }
     }
 
@@ -111,7 +135,11 @@ public class Farm {
             if(crop != null && crop.canHarvest()) {
                 todayHarvest.merge(crop.getId(), crop.getId().getYield(), Integer::sum);
                 harvest.merge(crop.getId(), crop.getId().getYield(), Integer::sum);
-                crops[pos[0]][pos[1]] = null;
+                if(crop.getId().regrows()) {
+                    crop.setStage(GrowthStage.SEED);
+                } else {
+                    crops[pos[0]][pos[1]] = null;
+                }
             }
         }
 
@@ -125,6 +153,9 @@ public class Farm {
 
     private void weather() {
         weather = Weather.getRandomWeather();
+        if(equals(weather, Weather.DRY)) {
+            dryDay++;
+        }
         println(weather.message());
     }
 
@@ -145,11 +176,12 @@ public class Farm {
         for(Map.Entry<CropID, Integer> entries : harvest.entrySet()) {
             coin += entries.getKey().getValue() * entries.getValue();
         }
+        harvest.clear();
         println(Localization.lang.t("game.sold", coin));
     }
 
     private void buyPlot() {
-        int plotCost = 128;
+        int plotCost = 131_072;
         int increase = 2;
 
         if(coin < plotCost) {
@@ -167,7 +199,13 @@ public class Farm {
         int newPlots = SIZE * SIZE - oldSize * oldSize;
         println(Localization.lang.t("game.plot", coin, newPlots));
     }
-    
+
+    private void showInventory() {
+        for(Map.Entry<CropID, Integer> entries : harvest.entrySet()) {
+            println(entries.getKey().getName() + " x" + entries.getValue());
+        }
+    }
+
     private void showStats() {
         println(Localization.lang.t("game.stats"));
         int totalCrops = 0;
@@ -178,8 +216,7 @@ public class Farm {
         println(Localization.lang.t("game.stats.days",days));
     }
 
-    private static int[][] index() {
-        int[][] indices = new int[SIZE * SIZE][2];
+    private int[][] index() {
         int k = 0;
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
@@ -189,6 +226,11 @@ public class Farm {
             }
         }
         return indices;
+    }
+
+    private void redo() {
+        Runnable action = commands.get(previousCmd.toLowerCase());
+        if(action != null) { action.run(); }
     }
 
     private String reply(String q) {
