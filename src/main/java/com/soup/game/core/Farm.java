@@ -26,6 +26,7 @@ public class Farm {
 
     private Weather weather;
     private String cmd = "";
+    private String previousCmd = "";
 
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
@@ -44,6 +45,11 @@ public class Farm {
     private void start() {
         days = 0; coin = 0;
         plant();
+        loop();
+        showStats();
+    }
+
+    private void loop() {
         do {
             println(day + " " + days);
             weather();
@@ -53,13 +59,14 @@ public class Farm {
                 cmd = run();
             } while (!equals(cmd, "skip") && !equals(cmd, "end"));
         } while (!equals(cmd, "end"));
-        showStats();
     }
 
     private String run() {
         cmd = reply(user);
         switch (cmd.toLowerCase()) {
+            case ".", ".." -> redo();
             case "harv", "harvest" -> harvest();
+            case "show" -> update();
             case "replant" -> plant();
             case "stats" -> showStats();
             case "sell" -> sellCrops();
@@ -67,9 +74,15 @@ public class Farm {
             case "sleep" -> sleep();
             case "skip" -> days++;
             case "end" -> {}
-            default -> println("Unknown command!");
+        }
+        if(!equals(cmd, ".") || !equals(cmd, "..")) {
+            previousCmd = cmd;
         }
         return cmd;
+    }
+
+    private void redo() {
+        cmd = previousCmd;
     }
 
     private void update() {
