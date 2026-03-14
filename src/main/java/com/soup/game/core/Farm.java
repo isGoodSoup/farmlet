@@ -33,7 +33,7 @@ public class Farm {
         final String NAME = Localization.lang.t("game.farm");
         this.user = Paths.get(System.getProperty("user.home")).getFileName().toString();
         this.title = Localization.lang.t("game.farm.title", user, NAME);
-        print(Localization.lang.t("game.welcome", title));
+        println(Localization.lang.t("game.welcome", title));
         this.harvest = new LinkedHashMap<>();
         this.scan = new Scanner(System.in);
         this.day = Localization.lang.t("game.day");
@@ -45,7 +45,7 @@ public class Farm {
         days = 0; coin = 0;
         plant();
         do {
-            print(day + " " + days);
+            println(day + " " + days);
             weather();
             update();
             if(!equals(cmd, "skip")) { harvest(); }
@@ -57,7 +57,7 @@ public class Farm {
     }
 
     private String run() {
-        cmd = reply(Localization.lang.t("game.cmd"));
+        cmd = reply(user);
         switch (cmd.toLowerCase()) {
             case "harv", "harvest" -> harvest();
             case "replant" -> plant();
@@ -67,7 +67,7 @@ public class Farm {
             case "sleep" -> sleep();
             case "skip" -> days++;
             case "end" -> {}
-            default -> print("Unknown command!");
+            default -> println("Unknown command!");
         }
         return cmd;
     }
@@ -104,7 +104,7 @@ public class Farm {
 
         if(!todayHarvest.isEmpty()) {
             for(Map.Entry<CropID, Integer> entry : todayHarvest.entrySet()) {
-                print(Localization.lang.t("game.yields",
+                println(Localization.lang.t("game.yields",
                         entry.getKey().getName(), entry.getValue()));
             }
         }
@@ -112,7 +112,7 @@ public class Farm {
 
     private void weather() {
         weather = Weather.getRandomWeather();
-        print(weather.message());
+        println(weather.message());
     }
 
     private void plant() {
@@ -122,7 +122,7 @@ public class Farm {
     }
 
     private void sleep() {
-        print(Localization.lang.t("game.sleep"));
+        println(Localization.lang.t("game.sleep"));
         harvest();
         days++;
         cmd = "skip";
@@ -132,7 +132,7 @@ public class Farm {
         for(Map.Entry<CropID, Integer> entries : harvest.entrySet()) {
             coin += entries.getKey().getValue() * entries.getValue();
         }
-        print(Localization.lang.t("game.sold", coin));
+        println(Localization.lang.t("game.sold", coin));
     }
 
     private void buyPlot() {
@@ -144,7 +144,7 @@ public class Farm {
         }
 
         if(SIZE + increase > MAX_SIZE) {
-            print(Localization.lang.t("game.plot.size"));
+            println(Localization.lang.t("game.plot.size"));
             return;
         }
 
@@ -152,17 +152,17 @@ public class Farm {
         SIZE += increase;
         coin -= plotCost;
         int newPlots = SIZE * SIZE - oldSize * oldSize;
-        print(Localization.lang.t("game.plot", coin, newPlots));
+        println(Localization.lang.t("game.plot", coin, newPlots));
     }
     
     private void showStats() {
-        print(Localization.lang.t("game.stats"));
+        println(Localization.lang.t("game.stats"));
         int totalCrops = 0;
         for(Map.Entry<CropID, Integer> entries : harvest.entrySet()) {
             totalCrops += entries.getValue();
         }
-        print(Localization.lang.t("game.stats.crops", totalCrops));
-        print(Localization.lang.t("game.stats.days",days));
+        println(Localization.lang.t("game.stats.crops", totalCrops));
+        println(Localization.lang.t("game.stats.days",days));
     }
 
     private static int[][] index() {
@@ -179,11 +179,15 @@ public class Farm {
     }
 
     private String reply(String q) {
-        print(q);
+        print(q + "$ ");
         return scan.nextLine();
     }
 
     private void print(String str) {
+        System.out.print(str);
+    }
+
+    private void println(String str) {
         System.out.println(str);
     }
 
