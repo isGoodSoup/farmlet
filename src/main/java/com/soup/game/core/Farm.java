@@ -2,6 +2,7 @@ package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
 import com.soup.game.enums.CropID;
+import com.soup.game.enums.Weather;
 import com.soup.game.service.Localization;
 
 import java.nio.file.Paths;
@@ -11,16 +12,20 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class Farm {
+    private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
     private final Map<CropID, Integer> harvest;
     private final String user;
+    private final String day;
     private final String title;
     private final Scanner scan;
 
-    private final static int MAX_SIZE = 256;
     private static int SIZE = 16;
     private static int coin;
     private static int days;
+
+    private Weather weather;
+    private String cmd;
 
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
@@ -31,53 +36,47 @@ public class Farm {
         print(Localization.lang.t("game.welcome", title));
         this.harvest = new LinkedHashMap<>();
         this.scan = new Scanner(System.in);
+        this.day = Localization.lang.t("game.day");
         start();
     }
 
     private void start() {
-        days = 0;
-        coin = 0;
-
+        days = 0; coin = 0;
         plant();
-        String cmd = "";
-        String day = Localization.lang.t("game.day");
-
         do {
             print(day + " " + days);
             update();
-            if(!cmd.equalsIgnoreCase("skip")) {
+            if(!equals(cmd, "skip")) {
                 harvest();
             }
 
             do {
-                cmd = reply(Localization.lang.t("game.cmd"));
-                switch (cmd.toLowerCase()) {
-                    case "replant" -> plant();
-                    case "stats" -> showStats();
-                    case "sell" -> sellCrops();
-                    case "buy" -> buyPlot();
-                    case "sleep" -> sleep();
-                    case "skip" -> days++;
-                    case "end" -> {}
-                    default -> print("Unknown command!");
-                }
-            } while (!cmd.equalsIgnoreCase("skip")
-                    && !cmd.equalsIgnoreCase("end"));
-        } while (!cmd.equalsIgnoreCase("end"));
+                cmd = run();
+            } while (!equals(cmd, "skip") && !equals(cmd, "end"));
+        } while (!equals(cmd, "end"));
         showStats();
     }
 
-    private void plant() {
-        for(int[] pos : index()) {
-            crops[pos[0]][pos[1]] = new Crop(CropID.random());
+    private String run() {
+        cmd = reply(Localization.lang.t("game.cmd"));
+        switch (cmd.toLowerCase()) {
+            case "replant" -> plant();
+            case "stats" -> showStats();
+            case "sell" -> sellCrops();
+            case "buy" -> buyPlot();
+            case "sleep" -> sleep();
+            case "skip" -> days++;
+            case "end" -> {}
+            default -> print("Unknown command!");
         }
+        return cmd;
     }
 
     private void update() {
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
                 Crop crop = crops[row][col];
-                if (crop == null) {
+                if(crop == null) {
                     System.out.print("[ ] ");
                 } else {
                     System.out.print(crop.canHarvest() ? "[H] " :
@@ -108,6 +107,12 @@ public class Farm {
         update();
     }
 
+    private void plant() {
+        for(int[] pos : index()) {
+            crops[pos[0]][pos[1]] = new Crop(CropID.random());
+        }
+    }
+
     private void sleep() {
         print(Localization.lang.t("game.sleep"));
         harvest();
@@ -125,11 +130,11 @@ public class Farm {
         int plotCost = 128;
         int increase = 2;
 
-        if (coin < plotCost) {
+        if(coin < plotCost) {
             return;
         }
 
-        if (SIZE + increase > MAX_SIZE) {
+        if(SIZE + increase > MAX_SIZE) {
             print(Localization.lang.t("game.plot.size"));
             return;
         }
@@ -175,5 +180,10 @@ public class Farm {
 
     private void println() {
         System.out.println();
+    }
+
+    @SuppressWarnings("all")
+    private boolean equals(String str1, String str2) {
+        return str1.equalsIgnoreCase(str2);
     }
 }
