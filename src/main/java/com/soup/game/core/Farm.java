@@ -7,10 +7,7 @@ import com.soup.game.enums.Weather;
 import com.soup.game.service.Localization;
 
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Farm {
     private final static int MAX_SIZE = 1024;
@@ -119,7 +116,7 @@ public class Farm {
     }
 
     private void grow() {
-        if(!equals(weather, Weather.DRY)) {
+        if(!Objects.equals(weather, Weather.DRY)) {
             for(int[] pos : index()) {
                 Crop crop = crops[pos[0]][pos[1]];
                 if(crop != null) crop.grow();
@@ -153,7 +150,7 @@ public class Farm {
 
     private void weather() {
         weather = Weather.getRandomWeather();
-        if(equals(weather, Weather.DRY)) {
+        if(Objects.equals(weather, Weather.DRY)) {
             dryDay++;
         }
         println(weather.message());
@@ -185,6 +182,7 @@ public class Farm {
         int increase = 2;
 
         if(coin < plotCost) {
+            println(Localization.lang.t("game.plot.fail"));
             return;
         }
 
@@ -248,10 +246,6 @@ public class Farm {
 
     private void println() {
         System.out.println();
-    }
-
-    private boolean equals(Object str1, Object str2) {
-        return str1.equals(str2);
     }
 
     private boolean equals(String str1, String str2) {
