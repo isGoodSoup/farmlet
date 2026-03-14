@@ -21,7 +21,7 @@ public class Farm {
 
     private void start() {
         int days = 0;
-        final int MAX_DAYS = 16;
+        final int MAX_DAYS = 24;
         boolean isRunning = true;
 
         for(int row = 0; row < SIZE; row++) {
