@@ -1,1 +1,1 @@
-rootProject.name = "JFarm"
+rootProject.name = "Sproutly"
