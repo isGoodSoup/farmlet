@@ -4,6 +4,8 @@ import com.soup.game.ent.Crop;
 import com.soup.game.ent.Player;
 import com.soup.game.enums.*;
 import com.soup.game.intf.Item;
+import com.soup.game.service.Console;
+import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
 
 import java.util.*;
@@ -21,7 +23,6 @@ public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
     private final Player player;
-    private final Map<String, Consumer<String[]>> commands;
     private final Map<Integer, String> market;
     private final String day;
     private final Scanner scan;
@@ -29,7 +30,6 @@ public class Farm {
 
     private int[][] indices;
     private int SIZE = 4;
-    private int coin;
     private int water;
     private int days;
     private int dryDay;
@@ -49,7 +49,6 @@ public class Farm {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
         this.indices = new int[SIZE * SIZE][2];
         this.player = new Player();
-        this.commands = new LinkedHashMap<>();
         this.market = new LinkedHashMap<>();
         this.addCommands();
 
@@ -61,7 +60,7 @@ public class Farm {
         upgrades.add(Upgrades.NULL);
 
         ASCIILogo.print();
-        println(Localization.lang.t("game.welcome", player.getTitle()));
+        console().println(Localization.lang.t("game.welcome", player.title()));
         start();
     }
 
@@ -78,7 +77,7 @@ public class Farm {
      * then entering the main loop.
      */
     private void start() {
-        days = 0; coin = 0;
+        days = 0;
         loop();
         showStats();
     }
@@ -90,15 +89,16 @@ public class Farm {
      * resets harvested crops.
      */
     private void loop() {
-        while(!equals(lastCommand, "end")) {
-            println(day + " " + days);
+        while(!console().equals(lastCommand, "end")) {
+            console().println(day + " " + days);
             season();
             weather();
             grow();
             update();
             do {
                 run();
-            } while (!equals(lastCommand, "skip") && !equals(lastCommand, "end"));
+            } while (!console().equals(lastCommand, "skip")
+                    && !console().equals(lastCommand, "end"));
             resetHarvest();
         }
     }
@@ -112,13 +112,13 @@ public class Farm {
         if(input.isEmpty()) { return; }
         String[] parts = input.split("\\s+");
         String command = parts[0].toLowerCase();
-        Consumer<String[]> action = commands.get(command);
+        Consumer<String[]> action = console().cmd().get(command);
         if(action != null) {
             action.accept(parts);
             lastCommand = command;
             previousArgs = parts.clone();
         } else {
-            error("Unknown command");
+            console().error("Unknown command");
         }
     }
 
@@ -127,19 +127,19 @@ public class Farm {
      * and their corresponding actions.
      */
     private void addCommands() {
-        commands.put("?", this::showHelp);
-        commands.put(".", this::redo);
-        commands.put("harvest", this::harvest);
-        commands.put("water", this::irrigate);
-        commands.put("plant", this::plant);
-        commands.put("show", args -> update());
-        commands.put("inv", args -> showInventory());
-        commands.put("sell", args -> sellCrops());
-        commands.put("buy", args -> buy());
-        commands.put("stats", args -> showStats());
-        commands.put("sleep", this::sleep);
-        commands.put("skip", args -> days++);
-        commands.put("end", args -> {});
+        console().cmd().put("?", this::showHelp);
+        console().cmd().put(".", this::redo);
+        console().cmd().put("harvest", this::harvest);
+        console().cmd().put("water", this::irrigate);
+        console().cmd().put("plant", this::plant);
+        console().cmd().put("show", args -> update());
+        console().cmd().put("inv", args -> showInventory());
+        console().cmd().put("sell", args -> sellCrops());
+        console().cmd().put("buy", args -> buy());
+        console().cmd().put("stats", args -> showStats());
+        console().cmd().put("sleep", this::sleep);
+        console().cmd().put("skip", args -> days++);
+        console().cmd().put("end", args -> {});
     }
 
     /**
@@ -152,17 +152,17 @@ public class Farm {
             for(int col = 0; col < SIZE; col++) {
                 Crop crop = crops[row][col];
                 if(dryDay > 4) {
-                    print("[X] ");
+                    console().print("[X] ");
                     if(crop != null) { crop.wither(); }
                 } else if(crop == null) {
-                    print("[ ] ");
+                    console().print("[ ] ");
                 } else {
-                    print(crop.wasHarvestedToday() ? "[ ] "
+                    console().print(crop.wasHarvestedToday() ? "[ ] "
                             : crop.canHarvest() ? "[H] "
                             : "[" + crop.getStage().name().charAt(0) + "] ");
                 }
             }
-            println();
+            console().println();
         }
     }
 
@@ -189,21 +189,22 @@ public class Farm {
                 int row = pos[1];
                 int col = pos[2];
                 Crop crop = crops[row][col];
-                player.getInv().add(crop.getId());
+                inventory().add(crop.getId());
                 crop.harvested();
                 if(crop.getId().regrows()) {
                     crop.setStage(GrowthStage.SEED);
                 } else {
                     crops[row][col] = null;
                 }
-                println(Localization.lang.t("game.yields",
-                        player.getInv().getQuantity(crop.getId())));
+                console().println(Localization.lang.t("game.yields",
+                        inventory().getQuantity(crop.getId())));
+                player.update(crop.getId().getXp());
             }
             return;
         }
 
         if(args.length < 3) {
-            println(Localization.lang.t("game.harvest.usage"));
+            console().println(Localization.lang.t("game.harvest.usage"));
             return;
         }
 
@@ -212,27 +213,27 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            error(Localization.lang.t("game.coordinates.invalid"));
+            console().error(Localization.lang.t("game.coordinates.invalid"));
             return;
         }
 
         if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
-            println(Localization.lang.t("game.coordinates.out_of_bounds"));
+            console().println(Localization.lang.t("game.coordinates.out_of_bounds"));
             return;
         }
 
         Crop crop = crops[row][col];
         if(crop == null) {
-            println(Localization.lang.t("game.harvest.nothing"));
+            console().println(Localization.lang.t("game.harvest.nothing"));
             return;
         }
 
         if(!crop.canHarvest()) {
-            println(Localization.lang.t("game.harvest.not_ready"));
+            console().println(Localization.lang.t("game.harvest.not_ready"));
             return;
         }
 
-        player.getInv().add(crop.getId());
+        inventory().add(crop.getId());
         crop.harvested();
         if(crop.getId().regrows()) {
             crop.setStage(GrowthStage.SEED);
@@ -240,8 +241,9 @@ public class Farm {
             crops[row][col] = null;
         }
 
-        println(Localization.lang.t("game.harvest.success",
+        console().println(Localization.lang.t("game.harvest.success",
                 crop.getId().getName(), row, col));
+        player.update(crop.getId().getXp());
     }
 
     /**
@@ -293,7 +295,7 @@ public class Farm {
 
         int[] counts = {noneCount, lowCount, midCount, highCount, maxCount};
         int average = Arrays.stream(counts).sum()/counts.length;
-        println(Localization.lang.t("game.irrigate_crops", average));
+        console().println(Localization.lang.t("game.irrigate_crops", average));
     }
 
     /**
@@ -307,9 +309,9 @@ public class Farm {
                 crop.water(Hydration.HIGH);
                 water -= 1;
             }
-            println(Localization.lang.t("game.irrigate.success", water));
+            console().println(Localization.lang.t("game.irrigate.success", water));
         } else {
-            error(Localization.lang.t("game.irrigate.fail"));
+            console().error(Localization.lang.t("game.irrigate.fail"));
         }
     }
 
@@ -320,7 +322,7 @@ public class Farm {
     private void season() {
         if(days % 30 == 0) {
             season = season.next();
-            println(Localization.lang.t("game.season.new",
+            console().println(Localization.lang.t("game.season.new",
                     season.getKey()));
         }
     }
@@ -334,7 +336,7 @@ public class Farm {
         if(Objects.equals(weather, Weather.DRY)) {
             dryDay++;
         }
-        println(weather.message());
+        console().println(weather.message());
     }
 
     /**
@@ -350,7 +352,7 @@ public class Farm {
         }
 
         if(args.length < 3) {
-            println(Localization.lang.t("game.plant.usage"));
+            console().println(Localization.lang.t("game.plant.usage"));
             return;
         }
 
@@ -359,22 +361,22 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            error(Localization.lang.t("game.coordinates.invalid"));
+            console().error(Localization.lang.t("game.coordinates.invalid"));
             return;
         }
 
         if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
-            println(Localization.lang.t("game.coordinates.out_of_bounds"));
+            console().println(Localization.lang.t("game.coordinates.out_of_bounds"));
             return;
         }
 
         if(crops[row][col] != null) {
-            println(Localization.lang.t("game.plant.occupied"));
+            console().println(Localization.lang.t("game.plant.occupied"));
             return;
         }
 
         crops[row][col] = new Crop(CropID.random(season));
-        println(Localization.lang.t("game.plant.success", row, col));
+        console().println(Localization.lang.t("game.plant.success", row, col));
     }
 
     /**
@@ -382,8 +384,8 @@ public class Farm {
      * @param args optional command arguments
      */
     private void sleep(String[] args) {
-        println(Localization.lang.t("game.sleep"));
-        println(Localization.lang.t("game.coin", coin));
+        console().println(Localization.lang.t("game.sleep"));
+        console().println(Localization.lang.t("game.coin", player.purse()));
         days++;
         updateHydration();
         lastCommand = "skip";
@@ -395,19 +397,19 @@ public class Farm {
     private void sellCrops() {
         int totalCoin = 0;
 
-        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.getInv()
+        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(inventory()
                 .getAll()).entrySet()) {
             Item item = entry.getKey();
             if(item instanceof CropID c) {
                 int quantity = entry.getValue();
                 totalCoin += c.value() * quantity;
                 for(int i = 0; i < quantity; i++) {
-                    player.getInv().remove(c);
+                    inventory().remove(c);
                 }
             }
         }
-        coin += totalCoin;
-        println(Localization.lang.t("game.sold", totalCoin));
+        player.earn(totalCoin);
+        console().println(Localization.lang.t("game.sold", totalCoin));
     }
 
     /**
@@ -432,7 +434,7 @@ public class Farm {
                 String price = entry.getKey().toString();
                 String name = entry.getValue();
                 String spaces = " ".repeat(maxPriceWidth - price.length() + 2);
-                println(price + spaces + name + " gold");
+                console().println(price + spaces + name + " gold");
             }
 
             while(!(r > market.size() + 1)) {
@@ -445,77 +447,77 @@ public class Farm {
                     int increase = 2;
 
                     for(Map.Entry<Integer, String> entries : market.entrySet()) {
-                        if(equals(entries.getValue(), Localization.lang.t(
+                        if(console().equals(entries.getValue(), Localization.lang.t(
                                 "market.plot"))) {
                             cost = entries.getKey();
                         }
                     }
 
-                    if(coin < cost) {
-                        println(Localization.lang.t("game.plot.fail"));
+                    if(player.purse() < cost) {
+                        console().println(Localization.lang.t("game.plot.fail"));
                         return;
                     }
 
                     if(SIZE + increase > MAX_SIZE) {
-                        println(Localization.lang.t("game.plot.size"));
+                        console().println(Localization.lang.t("game.plot.size"));
                         return;
                     }
 
                     int oldSize = SIZE;
-                    coin -= cost;
+                    player.take(cost);
                     SIZE += increase;
                     int newPlots = SIZE * SIZE - oldSize * oldSize;
                     resize();
-                    println(Localization.lang.t("market.bought.plot",
-                            newPlots, coin));
+                    console().println(Localization.lang.t("market.bought.plot",
+                            newPlots, player.purse()));
                 }
                 case 2 -> {
                     int cost = 0;
                     for(Map.Entry<Integer, String> entries : market.entrySet()) {
-                        if(equals(entries.getValue(), Localization.lang.t(
+                        if(console().equals(entries.getValue(), Localization.lang.t(
                                 "market.upgrades"))) {
                             cost = entries.getKey();
                         }
                     }
-                    coin -= cost;
+                    player.take(cost);
                     upgrades.add(Upgrades.HARVEST);
                     upgrades.add(Upgrades.PLANT);
                 }
                 case 3 -> {
                     int cost = 0;
                     for(Map.Entry<Integer, String> entries : market.entrySet()) {
-                        if(equals(entries.getValue(), Localization.lang.t(
+                        if(console().equals(entries.getValue(), Localization.lang.t(
                                 "market.water"))) {
                             cost = entries.getKey();
                         }
                     }
 
-                    if(coin < cost) {
-                        println(Localization.lang.t("market.funds"));
+                    if(player.purse() < cost) {
+                        console().println(Localization.lang.t("market.funds"));
                         return;
                     }
 
-                    coin -= cost;
+                    player.take(cost);
                     water += 4;
-                    println(Localization.lang.t("market.bought",
-                            "market.water", coin));
+                    console().println(Localization.lang.t("market.bought",
+                            "market.water", player.purse()));
                 }
                 case 4 -> isBuying = false;
             }
-        } while(coin > 0 || isBuying);
+        } while(player.purse() > 0 || isBuying);
     }
 
     /**
      * Shows all items and quantities in the player's inventory.
      */
     private void showInventory() {
-        if(player.getInv().isEmpty()) {
-            println(Localization.lang.t("game.inventory.empty"));
+        if(inventory().isEmpty()) {
+            console().println(Localization.lang.t("game.inventory.empty"));
             return;
         }
 
-        for(Map.Entry<Item, Integer> entry : player.getInv().getAll().entrySet()) {
-            println(entry.getKey().getName() + " x" + entry.getValue());
+        for(Map.Entry<Item, Integer> entry : inventory().getAll().entrySet()) {
+            console().println(entry.getKey().getName() + " x" + entry.getValue());
         }
     }
 
@@ -523,14 +525,14 @@ public class Farm {
      * Displays current game statistics: total crops, days passed, and coins.
      */
     private void showStats() {
-        println(Localization.lang.t("game.stats"));
+        console().println(Localization.lang.t("game.stats"));
         int totalCrops = 0;
-        for(Map.Entry<Item, Integer> entries : player.getInv().getAll().entrySet()) {
+        for(Map.Entry<Item, Integer> entries : inventory().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
-        println(Localization.lang.t("game.stats.crops", totalCrops));
-        println(Localization.lang.t("game.stats.days",days));
-        println(Localization.lang.t("game.stats.coin", coin));
+        console().println(Localization.lang.t("game.stats.crops", totalCrops));
+        console().println(Localization.lang.t("game.stats.days",days));
+        console().println(Localization.lang.t("game.stats.coin", player.purse()));
     }
 
     /**
@@ -538,9 +540,9 @@ public class Farm {
      * @param args optional command arguments
      */
     private void showHelp(String[] args) {
-        println("Available commands:");
-        for (String cmd : commands.keySet()) {
-            println(" - " + cmd);
+        console().println("Available commands:");
+        for (String cmd : console().cmd().keySet()) {
+            console().println(" - " + cmd);
         }
     }
 
@@ -572,11 +574,11 @@ public class Farm {
      */
     private void redo(String[] args) {
         if(previousArgs == null) {
-            println("No previous command.");
+            console().println("No previous command.");
             return;
         }
 
-        Consumer<String[]> action = commands.get(previousArgs[0]);
+        Consumer<String[]> action = console().cmd().get(previousArgs[0]);
         if(action != null) {
             action.accept(previousArgs.clone());
         }
@@ -588,7 +590,7 @@ public class Farm {
      * @return user input string
      */
     private String reply(String q) {
-        print(q + "$ ");
+        console().print(q + "$ ");
         return scan.nextLine();
     }
 
@@ -598,48 +600,29 @@ public class Farm {
      * @return user input integer
      */
     private int replyNum(String q) {
-        print(q + "$ ");
+        console().print(q + "$ ");
         return scan.nextInt();
     }
 
     /**
-     * Prints an error message to standard error.
-     * @param str message to print
+     * Returns the inventory associated with the current player.
+     * <p>This method provides convenient access to the player's
+     * {@link Inventory} instance for managing items such as crops,
+     * resources, or other collectibles.</p>
+     * @return the player's inventory
      */
-    private void error(String str) {
-        System.err.println(str);
+    private Inventory inventory() {
+        return player.inventory();
     }
 
     /**
-     * Prints text to standard output without newline.
-     * @param str text to print
+     * Returns the console service used for input/output operations.
+     * <p>This method provides access to the shared singleton instance
+     * of {@link Console} used throughout the application for printing
+     * messages and interacting with the command-line interface.</p>
+     * @return the global console service instance
      */
-    private void print(String str) {
-        System.out.print(str);
-    }
-
-    /**
-     * Prints text to standard output with newline.
-     * @param str text to print
-     */
-    private void println(String str) {
-        System.out.println(str);
-    }
-
-    /**
-     * Prints a blank line to standard output.
-     */
-    private void println() {
-        System.out.println();
-    }
-
-    /**
-     * Compares two strings ignoring case.
-     * @param str1 first string
-     * @param str2 second string
-     * @return true if strings are equal ignoring case
-     */
-    private boolean equals(String str1, String str2) {
-        return str1.equalsIgnoreCase(str2);
+    private Console console() {
+        return Console.cli;
     }
 }
