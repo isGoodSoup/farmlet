@@ -22,12 +22,11 @@ import java.util.function.Consumer;
 public class Farm {
     private static final int MAX_SIZE = 1024;
     private static final float HOURS = 24f;
-    private final Crop[][] crops;
     private final Player player;
+    private final Crop[][] crops;
     private final Map<Integer, String> market;
-    private final String day;
-    private final Scanner scan;
     private final List<Upgrades> upgrades;
+    private final String day;
 
     private int[][] indices;
     private int SIZE = 2;
@@ -54,7 +53,6 @@ public class Farm {
         this.market = new LinkedHashMap<>();
         this.addCommands();
 
-        this.scan = new Scanner(System.in);
         this.day = Localization.lang.t("game.day");
         this.weather = Weather.SUNNY;
         this.season = Seasons.SPRING;
@@ -116,7 +114,7 @@ public class Farm {
      * prints an error if the command is unknown
      */
     private void run() {
-        String input = reply(player.name()).trim();
+        String input = console().reply(player.name()).trim();
         if(input.isEmpty()) { return; }
         String[] parts = input.split("\\s+");
         String command = parts[0].toLowerCase();
@@ -455,7 +453,7 @@ public class Farm {
             }
 
             while(!(r > market.size() + 1)) {
-                r = replyNum(Localization.lang.t("market.query"));
+                r = console().replyNum(Localization.lang.t("market.query"));
             }
 
             switch(r) {
@@ -608,26 +606,6 @@ public class Farm {
         if(action != null) {
             action.accept(previousArgs.clone());
         }
-    }
-
-    /**
-     * Prints a prompt and reads a line from the console.
-     * @param q prompt to display
-     * @return user input string
-     */
-    private String reply(String q) {
-        console().print(q + "$ ");
-        return scan.nextLine();
-    }
-
-    /**
-     * Prints a prompt and reads an integer from the console.
-     * @param q prompt to display
-     * @return user input integer
-     */
-    private int replyNum(String q) {
-        console().print(q + "$ ");
-        return scan.nextInt();
     }
 
     /**

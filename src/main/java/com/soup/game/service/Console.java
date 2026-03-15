@@ -4,6 +4,7 @@ import com.soup.game.intf.Service;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.function.Consumer;
 
 /**
@@ -32,6 +33,7 @@ public class Console {
      * </p>
      */
     public static final Console cli = new Console();
+    private final Scanner scan = new Scanner(System.in);
     private final Map<String, Consumer<String[]>> commands = new LinkedHashMap<>();
 
     /**
@@ -102,5 +104,25 @@ public class Console {
         int sum = 0;
         for(int j : n) { sum += j; }
         return sum;
+    }
+
+    /**
+     * Prints a prompt and reads a line from the console.
+     * @param q prompt to display
+     * @return user input string
+     */
+    public String reply(String q) {
+        print(q + "$ ");
+        return scan.nextLine();
+    }
+
+    /**
+     * Prints a prompt and reads an integer from the console.
+     * @param q prompt to display
+     * @return user input integer
+     */
+    public int replyNum(String q) {
+        print(q + "$ ");
+        return scan.nextInt();
     }
 }
