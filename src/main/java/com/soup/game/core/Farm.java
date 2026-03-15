@@ -55,7 +55,6 @@ public class Farm {
         final String NAME = Localization.lang.t("game.farm");
         this.user = Paths.get(System.getProperty("user.home")).getFileName().toString();
         this.title = Localization.lang.t("game.farm.title", user, NAME);
-        println(Localization.lang.t("game.welcome", title));
 
         this.inventory = new Inventory();
         this.commands = new LinkedHashMap<>();
@@ -68,7 +67,18 @@ public class Farm {
         this.season = Seasons.SPRING;
         this.upgrades = new ArrayList<>();
         upgrades.add(Upgrades.NULL);
+
+        ASCIILogo.print();
+        println(Localization.lang.t("game.welcome", title));
         start();
+    }
+
+    /**
+     * The main method, to start the game
+     * @param args
+     */
+    public static void main(String[] args) {
+        new Farm();
     }
 
     /**
