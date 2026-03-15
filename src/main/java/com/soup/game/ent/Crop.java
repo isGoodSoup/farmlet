@@ -44,11 +44,11 @@ public final class Crop {
     }
 
     public int getValue() {
-        return id.getValue();
+        return id.value();
     }
 
     public String getName() {
-        return id.getName();
+        return id.name();
     }
 
     public boolean canHarvest() {

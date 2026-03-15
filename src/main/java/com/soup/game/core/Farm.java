@@ -202,7 +202,7 @@ public class Farm {
             Item item = entry.getKey();
             if(item instanceof CropID c) {
                 int quantity = entry.getValue();
-                totalCoin += c.getValue() * quantity;
+                totalCoin += c.value() * quantity;
                 for(int i = 0; i < quantity; i++) {
                     inventory.remove(c);
                 }
@@ -281,7 +281,7 @@ public class Farm {
                     }
 
                     coin -= cost;
-                    inventory.add(new Water(Localization.lang.t("market.water")));
+                    inventory.add(new Water(Localization.lang.t("market.water"), cost));
                     println(Localization.lang.t("market.bought", "market.water", coin));
                 }
                 case 4 -> isBuying = false;

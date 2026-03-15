@@ -40,7 +40,7 @@ public enum CropID implements Item {
     }
 
     @Override
-    public int getValue() {
+    public int value() {
         return value;
     }
 
