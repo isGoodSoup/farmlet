@@ -20,7 +20,8 @@ import java.util.function.Consumer;
  */
 
 public class Farm {
-    private final static int MAX_SIZE = 1024;
+    private static final int MAX_SIZE = 1024;
+    private static final float HOURS = 24f;
     private final Crop[][] crops;
     private final Player player;
     private final Map<Integer, String> market;
@@ -29,15 +30,16 @@ public class Farm {
     private final List<Upgrades> upgrades;
 
     private int[][] indices;
-    private int SIZE = 4;
+    private int SIZE = 2;
     private int water;
     private int days;
     private int dryDay;
+    private float hours;
 
     private Weather weather;
     private Seasons season;
     private String[] previousArgs;
-    private String lastCommand = "";
+    private String lastCommand = "foo";
 
     /**
      * Initializes a new Farm game.
@@ -93,11 +95,17 @@ public class Farm {
             console().println(day + " " + days);
             season();
             weather();
-            grow();
             update();
+            hours = 6f;
             do {
                 run();
-            } while (!console().equals(lastCommand, "skip")
+                hours += 0.2f;
+                if(hours >= HOURS || doSleep(lastCommand)) {
+                    hours = 0f;
+                    days++;
+                    grow();
+                }
+            } while (!doSleep(lastCommand)
                     && !console().equals(lastCommand, "end"));
             resetHarvest();
         }
@@ -134,11 +142,11 @@ public class Farm {
         console().cmd().put("plant", this::plant);
         console().cmd().put("show", args -> update());
         console().cmd().put("inv", args -> showInventory());
+        console().cmd().put("time", args -> showTime());
         console().cmd().put("sell", args -> sellCrops());
         console().cmd().put("buy", args -> buy());
         console().cmd().put("stats", args -> showStats());
         console().cmd().put("sleep", this::sleep);
-        console().cmd().put("skip", args -> days++);
         console().cmd().put("end", args -> {});
     }
 
@@ -384,11 +392,20 @@ public class Farm {
      * @param args optional command arguments
      */
     private void sleep(String[] args) {
+        hours = HOURS;
         console().println(Localization.lang.t("game.sleep"));
         console().println(Localization.lang.t("game.coin", player.purse()));
-        days++;
         updateHydration();
-        lastCommand = "skip";
+    }
+
+    /**
+     * With the parsed last command it returns a boolean check of
+     * if the last command is sleep
+     * @param lastCommand the latest command from the map
+     * @return boolean if true command was sleep, false otherwise
+     */
+    private boolean doSleep(String lastCommand) {
+        return console().equals(lastCommand, "sleep");
     }
 
     /**
@@ -519,6 +536,15 @@ public class Farm {
         for(Map.Entry<Item, Integer> entry : inventory().getAll().entrySet()) {
             console().println(entry.getKey().getName() + " x" + entry.getValue());
         }
+    }
+
+    /**
+     * Shows the current time and/of the day
+     */
+    private void showTime() {
+        int hour = (int) hours;
+        int minute = (int) ((hours - hour) * 60);
+        console().println(day + " " + days + " - " + String.format("%02d:%02d", hour, minute));
     }
 
     /**
