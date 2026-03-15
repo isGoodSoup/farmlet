@@ -79,4 +79,11 @@ public final class Crop {
     public void setStage(GrowthStage stage) {
         this.stage = stage;
     }
+
+    public Hydration getHydration() {
+        return hydration;
+    }
+    public void setHydration(Hydration hydration) {
+        this.hydration = hydration;
+    }
 }
