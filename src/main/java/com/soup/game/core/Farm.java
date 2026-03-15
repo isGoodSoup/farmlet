@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * water, harvest crops, buy plots/upgrades, and manage resources
  * like coins and water.
  * The farm maintains a grid of crops,
- * an inventory, a market, weather, and upgrades.
+ * an inventory, a market, weather and upgrades.
  */
 
 public class Farm {
