@@ -10,6 +10,14 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * Represents a console-based farm game where the player can plant,
+ * water, harvest crops, buy plots/upgrades, and manage resources
+ * like coins and water.
+ * The farm maintains a grid of crops,
+ * an inventory, a market, weather, and upgrades.
+ */
+
 public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
@@ -33,6 +41,12 @@ public class Farm {
     private String[] previousArgs;
     private String lastCommand = "";
 
+    /**
+     * Initializes a new Farm game.
+     * Sets up the farm grid, inventory, commands, market,
+     * weather and upgrades;
+     * and starts the main game loop.
+     */
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
         this.indices = new int[SIZE * SIZE][2];
@@ -55,12 +69,22 @@ public class Farm {
         start();
     }
 
+    /**
+     * Starts the game by initializing coins and days,
+     * then entering the main loop.
+     */
     private void start() {
         days = 0; coin = 0;
         loop();
         showStats();
     }
 
+    /**
+     * Main game loop.
+     * For each day, it displays the day number, updates season and weather,
+     * grows crops, updates the farm display, processes player commands, and
+     * resets harvested crops.
+     */
     private void loop() {
         do {
             println(day + " " + days);
@@ -75,6 +99,10 @@ public class Farm {
         } while (!equals(lastCommand, "end"));
     }
 
+    /**
+     * Processes a single command from the player.
+     * prints an error if the command is unknown
+     */
     private void run() {
         String input = reply(user).trim();
         if(input.isEmpty()) { return; }
@@ -89,6 +117,11 @@ public class Farm {
             error("Unknown command");
         }
     }
+
+    /**
+     * Registers all available commands
+     * and their corresponding actions.
+     */
     private void addCommands() {
         commands.put("?", this::showHelp);
         commands.put(".", this::redo);
@@ -105,6 +138,11 @@ public class Farm {
         commands.put("end", args -> {});
     }
 
+    /**
+     * Displays the current farm grid and crop status.
+     * Shows [X] for withered crops, [ ] for empty, [H] for harvestable, or
+     * the first letter of the growth stage otherwise.
+     */
     private void update() {
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
@@ -124,6 +162,10 @@ public class Farm {
         }
     }
 
+    /**
+     * Advances the growth of all crops on the farm,
+     * except during dry weather.
+     */
     private void grow() {
         if(!Objects.equals(weather, Weather.DRY)) {
             for(int[] pos : index()) {
@@ -133,6 +175,10 @@ public class Farm {
         }
     }
 
+    /**
+     * Harvests a crop or multiple crops depending on arguments and upgrades.
+     * @param args command arguments (row and column indices optional)
+     */
     private void harvest(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.HARVEST)) {
             for(int[] pos : index()) {
@@ -194,6 +240,10 @@ public class Farm {
                 crop.getId().getName(), row, col));
     }
 
+    /**
+     * Resets the harvest state of all crops
+     * at the end of the day.
+     */
     private void resetHarvest() {
         for(int[] pos : index()) {
             Crop crop = crops[pos[0]][pos[1]];
@@ -203,6 +253,10 @@ public class Farm {
         }
     }
 
+    /**
+     * Updates hydration levels of all crops based on previous water state
+     * and withers crops with no water.
+     */
     private void updateHydration() {
         int noneCount = 0, lowCount = 0, midCount = 0, highCount = 0, maxCount = 0;
 
@@ -238,6 +292,10 @@ public class Farm {
         println(Localization.lang.t("game.irrigate_crops", average));
     }
 
+    /**
+     * Waters all crops if the player has water available.
+     * @param args optional command arguments
+     */
     private void irrigate(String[] args) {
         if(water > 0) {
             for(int[] pos : index()) {
@@ -251,10 +309,18 @@ public class Farm {
         }
     }
 
+    /**
+     * Updates the season every 30 days, and yes, it affects
+     * which and when it grows
+     */
     private void season() {
         // TODO seasons logic
     }
 
+    /**
+     * Randomly sets the weather for the day and increments
+     * dry day counter if necessary.
+     */
     private void weather() {
         weather = Weather.getRandomWeather();
         if(Objects.equals(weather, Weather.DRY)) {
@@ -263,6 +329,10 @@ public class Farm {
         println(weather.message());
     }
 
+    /**
+     * Plants a crop at a specific location or across all plots if player has upgrade.
+     * @param args command arguments (row and column indices optional)
+     */
     private void plant(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.PLANT)) {
             for(int[] pos : index()) {
@@ -299,6 +369,10 @@ public class Farm {
         println(Localization.lang.t("game.plant.success", row, col));
     }
 
+    /**
+     * Skips to the next day, updates hydration, and shows coin status.
+     * @param args optional command arguments
+     */
     private void sleep(String[] args) {
         println(Localization.lang.t("game.sleep"));
         println(Localization.lang.t("game.coin", coin));
@@ -307,6 +381,9 @@ public class Farm {
         lastCommand = "skip";
     }
 
+    /**
+     * Sells all crops in the inventory and adds coins to the player.
+     */
     private void sellCrops() {
         int totalCoin = 0;
 
@@ -324,6 +401,10 @@ public class Farm {
         println(Localization.lang.t("game.sold", totalCoin));
     }
 
+    /**
+     * Opens the market for the player to buy plots,
+     * water, or upgrades. More to be added.
+     */
     private void buy() {
         market.clear();
         market.put(131_072, Localization.lang.t("market.plot"));
@@ -411,6 +492,9 @@ public class Farm {
         } while(coin > 0 || isBuying);
     }
 
+    /**
+     * Shows all items and quantities in the player's inventory.
+     */
     private void showInventory() {
         if(inventory.isEmpty()) {
             println(Localization.lang.t("game.inventory.empty"));
@@ -422,6 +506,9 @@ public class Farm {
         }
     }
 
+    /**
+     * Displays current game statistics: total crops, days passed, and coins.
+     */
     private void showStats() {
         println(Localization.lang.t("game.stats"));
         int totalCrops = 0;
@@ -433,6 +520,10 @@ public class Farm {
         println(Localization.lang.t("game.stats.coin", coin));
     }
 
+    /**
+     * Shows available commands to the player.
+     * @param args optional command arguments
+     */
     private void showHelp(String[] args) {
         println("Available commands:");
         for (String cmd : commands.keySet()) {
@@ -440,6 +531,10 @@ public class Farm {
         }
     }
 
+    /**
+     * Returns a list of all positions on the farm grid.
+     * @return 2D array of row-column indices
+     */
     private int[][] index() {
         List<int[]> positions = new ArrayList<>();
         for(int row = 0; row < SIZE; row++) {
@@ -450,10 +545,18 @@ public class Farm {
         return positions.toArray(new int[0][0]);
     }
 
+    /**
+     * Resizes the farm grid and updates indices array
+     * after buying new plots.
+     */
     private void resize() {
         indices = new int[SIZE * SIZE][2];
     }
 
+    /**
+     * Repeats the previous command entered by the player.
+     * @param args optional command arguments
+     */
     private void redo(String[] args) {
         if(previousArgs == null) {
             println("No previous command.");
@@ -466,32 +569,63 @@ public class Farm {
         }
     }
 
+    /**
+     * Prints a prompt and reads a line from the console.
+     * @param q prompt to display
+     * @return user input string
+     */
     private String reply(String q) {
         print(q + "$ ");
         return scan.nextLine();
     }
 
+    /**
+     * Prints a prompt and reads an integer from the console.
+     * @param q prompt to display
+     * @return user input integer
+     */
     private int replyNum(String q) {
         print(q + "$ ");
         return scan.nextInt();
     }
 
+    /**
+     * Prints an error message to standard error.
+     * @param str message to print
+     */
     private void error(String str) {
         System.err.println(str);
     }
 
+    /**
+     * Prints text to standard output without newline.
+     * @param str text to print
+     */
     private void print(String str) {
         System.out.print(str);
     }
 
+    /**
+     * Prints text to standard output with newline.
+     * @param str text to print
+     */
     private void println(String str) {
         System.out.println(str);
     }
 
+    /**
+     * Prints a blank line to standard output.
+     */
     private void println() {
         System.out.println();
     }
 
+    /**
+     * Compares two strings ignoring case.
+     * @param str1 first string
+     * @param str2 second string
+     * @return true if strings are equal ignoring case
+     */
     private boolean equals(String str1, String str2) {
         return str1.equalsIgnoreCase(str2);
     }
