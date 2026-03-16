@@ -989,6 +989,27 @@ public final class Game {
         } while(player.purse() > 0 || isBuying);
     }
 
+    /**
+     * Grants the player a specified quantity of an item, crop, upgrade,
+     * water, or gold.
+     * <p>
+     * The method first checks if the arguments are valid. Then it:
+     * <ul>
+     *     <li>Adds the specified crop to the player's inventory if it exists.</li>
+     *     <li>Adds the specified upgrade to the player's upgrades if it exists.</li>
+     *     <li>Adds water or gold directly to the player if specified.</li>
+     * </ul>
+     * After applying the grant, the game is forcibly ended to reflect
+     * the immediate effect.
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] – the command name "give"</li>
+     *                 <li>args[1] – the item/upgrade/water/gold name</li>
+     *                 <li>args[2] – the quantity to give</li>
+     *             </ul>
+     */
     private void give(String[] args) {
         if(args.length < 3) {
             console().println(Localization.lang.t("game.give.usage"), Console.PURPLE);
@@ -1141,6 +1162,15 @@ public final class Game {
         }
     }
 
+    /**
+     * Immediately ends the game and displays the apocalypse ending.
+     * <p>
+     * This method sets the internal game over flag to true and prints
+     * a message indicating that the player’s farm has failed due to
+     * an in-game catastrophe. The last command is also set to "end"
+     * to terminate any ongoing loops.
+     * </p>
+     */
     private void forceEnd() {
         isGameOver = true;
         console().println(Localization.lang.t("game.end.ending2",
@@ -1150,9 +1180,11 @@ public final class Game {
 
     /**
      * Returns the inventory associated with the current player.
-     * <p>This method provides convenient access to the player's
+     * <p>
+     * This method provides convenient access to the player's
      * {@link Inventory} instance for managing items such as crops,
-     * resources, or other collectibles.</p>
+     * resources, or other collectibles.
+     * </p>
      * @return the player's inventory
      */
     private Inventory inventory() {
@@ -1161,9 +1193,11 @@ public final class Game {
 
     /**
      * Returns the console service used for input/output operations.
-     * <p>This method provides access to the shared singleton instance
+     * <p>
+     * This method provides access to the shared singleton instance
      * of {@link Console} used throughout the application for printing
-     * messages and interacting with the command-line interface.</p>
+     * messages and interacting with the command-line interface.
+     * </p>
      * @return the global console service instance
      */
     private Console console() {
