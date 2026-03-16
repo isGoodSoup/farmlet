@@ -215,7 +215,6 @@ public final class Crop {
      */
     public char getChar() {
         if(wasHarvested) { return ' '; }
-        if(canHarvest) { return 'H'; }
         if(isWithered) { return 'X'; }
         return stage.name().charAt(0);
     }

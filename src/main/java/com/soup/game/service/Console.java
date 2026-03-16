@@ -79,12 +79,22 @@ public class Console {
     }
 
     /**
-     * Prints text to standard output with newline.
+     * Prints text to standard output with newline (color).
      * @param str text to print
+     * @param color color of text
      */
     public void println(String str, String color) {
         System.out.println(color + str + RESET);
     }
+
+    /**
+     * Prints text to standard output with newline.
+     * @param str text to print
+     */
+    public void println(String str) {
+        System.out.println(str + RESET);
+    }
+
 
     /**
      * Prints a blank line to standard output.

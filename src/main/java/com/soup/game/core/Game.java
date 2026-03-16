@@ -34,7 +34,7 @@ public final class Game {
     private final List<Upgrades> upgrades;
     private final String day;
 
-    private int SIZE = 2;
+    private int SIZE = 16;
     private float water = 100f;
     private int days;
     private int dryDay;
@@ -161,8 +161,22 @@ public final class Game {
      * the first letter of the growth stage otherwise.
      */
     private void update() {
+        boolean isRow = false, isCol = false;
+        String spacing = "   ";
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
+                if(!isCol) {
+                    for(int i = 0; i < SIZE; i++) {
+                        console().print(spacing);
+                        console().print(col + i + "");
+                    }
+                    console().println();
+                    isCol = true;
+                }
+                if(!isRow) {
+                    console().print(row + " ");
+                    isRow = true;
+                }
                 Tile tile = tiles[row][col];
                 if(tile == null || tile.crop() == null) {
                     console().print("[ ] ");
@@ -175,6 +189,7 @@ public final class Game {
                     }
                 }
             }
+            isRow = false;
             console().println();
         }
     }
