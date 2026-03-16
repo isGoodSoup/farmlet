@@ -125,7 +125,7 @@ public class Console {
      * @return user input string
      */
     public String reply(String q) {
-        print(q + "$ ");
+        print(q + " $ ");
         return scan.nextLine();
     }
 

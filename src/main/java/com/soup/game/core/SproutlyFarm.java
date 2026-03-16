@@ -291,7 +291,7 @@ public class SproutlyFarm {
         }
 
         float average = cropCount > 0 ? (float) totalHydration/cropCount : 0f;
-        console().println(Localization.lang.t("game.irrigate_crops", average), Console.PURPLE);
+        console().println(Localization.lang.t("game.irrigate_crops", average), Console.BLUE);
     }
 
     /**
