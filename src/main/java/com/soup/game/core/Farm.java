@@ -438,7 +438,7 @@ public class Farm {
 
         Tile tile = tiles[row][col];
         if(tile != null && tile.crop() != null) {
-            CropID id = tile.crop().getId();
+            String id = tile.crop().getId().getName();
             console().println(Localization.lang.t("game.get_crop", id, row, col));
         }
     }
