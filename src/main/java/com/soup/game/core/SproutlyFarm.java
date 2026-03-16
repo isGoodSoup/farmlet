@@ -197,7 +197,8 @@ public class SproutlyFarm {
      * @param args command arguments (row and column indices optional)
      */
     private void harvest(String[] args) {
-        if(args.length < 3 && upgrades.contains(Upgrades.HARVEST)) {
+        if(args.length < 3 && upgrades.contains(Upgrades.HARVEST)
+                && console().equals(args[1], "all")) {
             for(Pos pos : index()) {
                 int row = pos.row();
                 int col = pos.col();
@@ -344,7 +345,7 @@ public class SproutlyFarm {
      * @param args command arguments (row and column indices optional)
      */
     private void plant(String[] args) {
-        if(args.length < 3 && upgrades.contains(Upgrades.PLANT)) {
+        if(args.length < 3 && upgrades.contains(Upgrades.PLANT) && console().equals(args[1], "all")) {
             for(Pos pos : index()) {
                 tiles[pos.row()][pos.col()] = new Tile(new Crop(CropID.id.random(season)),
                         Soil.SILT, Fertilizer.NONE);
@@ -508,9 +509,9 @@ public class SproutlyFarm {
      */
     private void buy() {
         market.clear();
-        market.put(131_072, Localization.lang.t("market.plot"));
+        market.put(8_192, Localization.lang.t("market.plot"));
         market.put(65_536, Localization.lang.t("market.upgrades"));
-        market.put(4096, Localization.lang.t("market.water"));
+        market.put(100, Localization.lang.t("market.water"));
         boolean isBuying = true;
         do {
             int r = Integer.MAX_VALUE;
