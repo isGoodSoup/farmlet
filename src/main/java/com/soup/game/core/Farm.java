@@ -144,6 +144,7 @@ public class Farm {
         console().cmd().put("rip", this::rip);
         console().cmd().put("water", this::irrigate);
         console().cmd().put("plant", this::plant);
+        console().cmd().put("get", this::get);
         console().cmd().put("show", args -> update());
         console().cmd().put("inv", args -> showInventory());
         console().cmd().put("time", args -> showTime());
@@ -401,6 +402,61 @@ public class Farm {
         console().println(Localization.lang.t("game.plant.success", row, col));
     }
 
+    /**
+     * Displays information about the crop at a specified location on the farm.
+     * <p>
+     * This method prints the crop's ID and its coordinates without modifying the farm.
+     * It validates that the row and column indices are provided, numeric, and within bounds.
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] is the command name ("get")</li>
+     *                 <li>args[1] is the row index of the crop</li>
+     *                 <li>args[2] is the column index of the crop</li>
+     *             </ul>
+     */
+    private void get(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.rip.usage"));
+            return;
+        }
+
+        int row, col;
+        try {
+            row = Integer.parseInt(args[1]);
+            col = Integer.parseInt(args[2]);
+        } catch(NumberFormatException e) {
+            console().error(Localization.lang.t("game.coordinates.invalid"));
+            return;
+        }
+
+        if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+            console().println(Localization.lang.t("game.coordinates.out_of_bounds"));
+            return;
+        }
+
+        Tile tile = tiles[row][col];
+        if(tile != null && tile.crop() != null) {
+            CropID id = tile.crop().getId();
+            console().println(Localization.lang.t("game.get_crop", id, row, col));
+        }
+    }
+
+    /**
+     * Removes (rips) the crop at a specified location on the farm.
+     * <p>
+     * This method deletes the crop at the given coordinates, making the plot empty.
+     * It validates that the row and column indices are provided, numeric, and within bounds.
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] is the command name ("rip")</li>
+     *                 <li>args[1] is the row index of the crop to remove</li>
+     *                 <li>args[2] is the column index of the crop to remove</li>
+     *             </ul>
+     */
     private void rip(String[] args) {
         if(args.length < 3) {
             console().println(Localization.lang.t("game.rip.usage"));
