@@ -2,8 +2,10 @@ package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
 import com.soup.game.ent.Player;
+import com.soup.game.world.Tile;
 import com.soup.game.enums.*;
 import com.soup.game.intf.Item;
+import com.soup.game.intf.World;
 import com.soup.game.service.Console;
 import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
@@ -19,11 +21,12 @@ import java.util.function.Consumer;
  * an inventory, a market, weather and upgrades.</p>
  */
 
+@World
 public class Farm {
     private static final int MAX_SIZE = 1024;
     private static final float HOURS = 24f;
     private final Player player;
-    private final Crop[][] crops;
+    private final Tile[][] tiles;
     private final Map<Integer, String> market;
     private final List<Upgrades> upgrades;
     private final String day;
@@ -47,7 +50,7 @@ public class Farm {
      */
     public Farm() {
         Localization.lang.setLocale(Locale.forLanguageTag("en"));
-        this.crops = new Crop[MAX_SIZE][MAX_SIZE];
+        this.tiles = new Tile[MAX_SIZE][MAX_SIZE];
         this.indices = new int[SIZE * SIZE][2];
         this.player = new Player();
         this.market = new LinkedHashMap<>();
@@ -156,16 +159,16 @@ public class Farm {
     private void update() {
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
-                Crop crop = crops[row][col];
+                Tile tile = tiles[row][col];
                 if(dryDay > 4) {
                     console().print("[X] ");
-                    if(crop != null) { crop.wither(); }
-                } else if(crop == null) {
+                    if(tile != null) { tile.crop().wither(); }
+                } else if(tile == null) {
                     console().print("[ ] ");
                 } else {
-                    console().print(crop.wasHarvestedToday() ? "[ ] "
-                            : crop.canHarvest() ? "[H] "
-                            : "[" + crop.getStage().name().charAt(0) + "] ");
+                    console().print(tile.crop().wasHarvestedToday() ? "[ ] "
+                            : tile.crop().canHarvest() ? "[H] "
+                            : "[" + tile.crop().getStage().name().charAt(0) + "] ");
                 }
             }
             console().println();
@@ -179,8 +182,8 @@ public class Farm {
     private void grow() {
         if(!Objects.equals(weather, Weather.DRY)) {
             for(int[] pos : index()) {
-                Crop crop = crops[pos[0]][pos[1]];
-                if(crop != null) crop.grow();
+                Tile tile = tiles[pos[0]][pos[1]];
+                if(tile.crop() != null) tile.crop().grow();
             }
         }
     }
@@ -194,17 +197,17 @@ public class Farm {
             for(int[] pos : index()) {
                 int row = pos[1];
                 int col = pos[2];
-                Crop crop = crops[row][col];
-                inventory().add(crop.getId());
-                crop.harvested();
-                if(crop.getId().regrows()) {
-                    crop.setStage(GrowthStage.SEED);
+                Tile tile = tiles[row][col];
+                inventory().add(tile.crop().getId());
+                tile.crop().harvested();
+                if(tile.crop().getId().regrows()) {
+                    tile.crop().setStage(GrowthStage.SEED);
                 } else {
-                    crops[row][col] = null;
+                    tiles[row][col] = null;
                 }
                 console().println(Localization.lang.t("game.yields",
-                        inventory().getQuantity(crop.getId())));
-                player.update(crop.getId().getXp());
+                        inventory().getQuantity(tile.crop().getId())));
+                player.update(tile.crop().getId().getXp());
             }
             return;
         }
@@ -228,28 +231,28 @@ public class Farm {
             return;
         }
 
-        Crop crop = crops[row][col];
-        if(crop == null) {
+        Tile tile = tiles[row][col];
+        if(tile.crop() == null) {
             console().println(Localization.lang.t("game.harvest.nothing"));
             return;
         }
 
-        if(!crop.canHarvest()) {
+        if(!tile.crop().canHarvest()) {
             console().println(Localization.lang.t("game.harvest.not_ready"));
             return;
         }
 
-        inventory().add(crop.getId());
-        crop.harvested();
-        if(crop.getId().regrows()) {
-            crop.setStage(GrowthStage.SEED);
+        inventory().add(tile.crop().getId());
+        tile.crop().harvested();
+        if(tile.crop().getId().regrows()) {
+            tile.crop().setStage(GrowthStage.SEED);
         } else {
-            crops[row][col] = null;
+            tiles[row][col] = null;
         }
 
         console().println(Localization.lang.t("game.harvest.success",
-                crop.getId().getName(), row, col));
-        player.update(crop.getId().getXp());
+                tile.crop().getId().getName(), row, col));
+        player.update(tile.crop().getId().getXp());
     }
 
     /**
@@ -258,9 +261,9 @@ public class Farm {
      */
     private void resetHarvest() {
         for(int[] pos : index()) {
-            Crop crop = crops[pos[0]][pos[1]];
-            if(crop != null) {
-                crop.resetHarvest();
+            Tile tile = tiles[pos[0]][pos[1]];
+            if(tile.crop() != null) {
+                tile.crop().resetHarvest();
             }
         }
     }
@@ -273,28 +276,28 @@ public class Farm {
         int noneCount = 0, lowCount = 0, midCount = 0, highCount = 0, maxCount = 0;
 
         for (int[] pos : index()) {
-            Crop crop = crops[pos[0]][pos[1]];
-            Hydration hydration = crop.getHydration();
+            Tile tile = tiles[pos[0]][pos[1]];
+            Hydration hydration = tile.crop().getHydration();
             switch (hydration) {
                 case NONE -> {
                     noneCount++;
-                    crop.wither();
+                    tile.crop().wither();
                 }
                 case LOW -> {
                     lowCount++;
-                    crop.water(Hydration.NONE);
+                    tile.crop().water(Hydration.NONE);
                 }
                 case MID -> {
                     midCount++;
-                    crop.water(Hydration.LOW);
+                    tile.crop().water(Hydration.LOW);
                 }
                 case HIGH -> {
                     highCount++;
-                    crop.water(Hydration.MID);
+                    tile.crop().water(Hydration.MID);
                 }
                 case MAX -> {
                     maxCount++;
-                    crop.water(Hydration.HIGH);
+                    tile.crop().water(Hydration.HIGH);
                 }
             }
         }
@@ -311,8 +314,8 @@ public class Farm {
     private void irrigate(String[] args) {
         if(water > 0) {
             for(int[] pos : index()) {
-                Crop crop = crops[pos[0]][pos[1]];
-                crop.water(Hydration.HIGH);
+                Tile tile = tiles[pos[0]][pos[1]];
+                tile.crop().water(Hydration.HIGH);
                 water -= 1;
             }
             console().println(Localization.lang.t("game.irrigate.success", water));
@@ -352,7 +355,8 @@ public class Farm {
     private void plant(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.PLANT)) {
             for(int[] pos : index()) {
-                crops[pos[1]][pos[2]] = new Crop(CropID.random(season));
+                tiles[pos[1]][pos[2]] = new Tile(new Crop(CropID.random(season)),
+                        Soil.SILT, Fertilizer.NONE);
             }
             return;
         }
@@ -376,12 +380,13 @@ public class Farm {
             return;
         }
 
-        if(crops[row][col] != null) {
+        if(tiles[row][col] != null) {
             console().println(Localization.lang.t("game.plant.occupied"));
             return;
         }
 
-        crops[row][col] = new Crop(CropID.random(season));
+        tiles[row][col] = new Tile(new Crop(CropID.random(season)),
+                Soil.SILT, Fertilizer.NONE);
         console().println(Localization.lang.t("game.plant.success", row, col));
     }
 

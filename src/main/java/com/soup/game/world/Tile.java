@@ -1,5 +1,6 @@
-package com.soup.game.ent;
+package com.soup.game.world;
 
+import com.soup.game.ent.Crop;
 import com.soup.game.enums.Fertilizer;
 import com.soup.game.enums.Soil;
 import com.soup.game.intf.Data;
