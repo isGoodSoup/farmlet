@@ -4,6 +4,7 @@ import com.soup.game.enums.CropID;
 import com.soup.game.enums.GrowthStage;
 import com.soup.game.enums.Hydration;
 import com.soup.game.intf.Entity;
+import com.soup.game.intf.World;
 
 /**
  * Represents a crop in the farm game.
@@ -16,7 +17,7 @@ import com.soup.game.intf.Entity;
  * {@link GrowthStage#HARVESTABLE}, and may regrow depending on
  * the crop type.</p>
  */
-@Entity(type = "crop")
+@World(entity = "crop")
 public final class Crop {
     private final CropID id;
     private GrowthStage stage;
