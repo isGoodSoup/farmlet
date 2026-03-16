@@ -37,7 +37,7 @@ public final class Crop {
         this.id = id;
         this.stage = GrowthStage.SEED;
         this.days = 0;
-        this.daysToMature = id.getDays();
+        this.daysToMature = Math.max(1, id.getDays());
         this.canRegrow = id.regrows();
         this.hydration = Hydration.MID;
     }
@@ -52,7 +52,7 @@ public final class Crop {
     public void grow() {
         if(!canHarvest) {
             days++;
-            int stageLength = daysToMature/GrowthStage.values().length;
+            int stageLength = Math.max(1, daysToMature / GrowthStage.values().length);
             if(days % stageLength == 0 && stage != GrowthStage.HARVESTABLE) {
                 stage = stage.next();
             }

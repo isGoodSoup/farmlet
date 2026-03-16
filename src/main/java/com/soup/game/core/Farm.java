@@ -124,8 +124,10 @@ public class Farm {
         Consumer<String[]> action = console().cmd().get(command);
         if(action != null) {
             action.accept(parts);
-            lastCommand = command;
-            previousArgs = parts.clone();
+            if(!command.equals(".")) {
+                lastCommand = command;
+                previousArgs = parts.clone();
+            }
         } else {
             console().error("Unknown command");
         }
@@ -264,7 +266,7 @@ public class Farm {
     private void resetHarvest() {
         for(Pos pos : index()) {
             Tile tile = tiles[pos.row()][pos.col()];
-            if(tile.crop() != null) {
+            if(tile != null && tile.crop() != null) {
                 tile.crop().resetHarvest();
             }
         }
@@ -277,29 +279,34 @@ public class Farm {
     private void updateHydration() {
         int noneCount = 0, lowCount = 0, midCount = 0, highCount = 0, maxCount = 0;
 
-        for (Pos pos : index()) {
+        for(Pos pos : index()) {
+            Hydration hydration = null;
             Tile tile = tiles[pos.row()][pos.col()];
-            Hydration hydration = tile.crop().getHydration();
-            switch (hydration) {
-                case NONE -> {
-                    noneCount++;
-                    tile.crop().wither();
-                }
-                case LOW -> {
-                    lowCount++;
-                    tile.crop().water(Hydration.NONE);
-                }
-                case MID -> {
-                    midCount++;
-                    tile.crop().water(Hydration.LOW);
-                }
-                case HIGH -> {
-                    highCount++;
-                    tile.crop().water(Hydration.MID);
-                }
-                case MAX -> {
-                    maxCount++;
-                    tile.crop().water(Hydration.HIGH);
+            if(tile != null && tile.crop() != null) {
+                hydration = tile.crop().getHydration();
+            }
+            if (hydration != null) {
+                switch(hydration) {
+                    case NONE -> {
+                        noneCount++;
+                        tile.crop().wither();
+                    }
+                    case LOW -> {
+                        lowCount++;
+                        tile.crop().water(Hydration.NONE);
+                    }
+                    case MID -> {
+                        midCount++;
+                        tile.crop().water(Hydration.LOW);
+                    }
+                    case HIGH -> {
+                        highCount++;
+                        tile.crop().water(Hydration.MID);
+                    }
+                    case MAX -> {
+                        maxCount++;
+                        tile.crop().water(Hydration.HIGH);
+                    }
                 }
             }
         }
@@ -462,7 +469,7 @@ public class Farm {
                 console().println(price + spaces + name + " gold");
             }
 
-            while(!(r > market.size() + 1)) {
+            while(r > market.size() + 1) {
                 r = console().replyNum(Localization.lang.t("market.query"));
             }
 
@@ -575,7 +582,7 @@ public class Farm {
      */
     private void showHelp(String[] args) {
         console().println("Available commands:");
-        for (String cmd : console().cmd().keySet()) {
+        for(String cmd : console().cmd().keySet()) {
             console().println(" - " + cmd);
         }
     }
@@ -585,6 +592,12 @@ public class Farm {
      * @return 2D array of row-column indices
      */
     private List<Pos> index() {
+        positions = new ArrayList<>(SIZE * SIZE);
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                positions.add(new Pos(row, col));
+            }
+        }
         return positions;
     }
 
@@ -593,20 +606,14 @@ public class Farm {
      * after buying new plots. It's a wrapper for index
      */
     private void resize() {
-        for (int row = 0; row < SIZE; row++) {
-            for (int col = 0; col < SIZE; col++) {
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
                 if (tiles[row][col] == null) {
                     tiles[row][col] = new Tile(null, Soil.LOAM, Fertilizer.NONE);
                 }
             }
         }
-
-        positions = new ArrayList<>(SIZE * SIZE);
-        for (int row = 0; row < SIZE; row++) {
-            for (int col = 0; col < SIZE; col++) {
-                positions.add(new Pos(row, col));
-            }
-        }
+        index();
     }
 
     /**
@@ -615,7 +622,7 @@ public class Farm {
      */
     private void redo(String[] args) {
         if(previousArgs == null) {
-            console().println("No previous command.");
+            console().error("No previous command.");
             return;
         }
 
