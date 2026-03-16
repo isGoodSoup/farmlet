@@ -29,6 +29,7 @@ public enum CropID implements Item {
     GRAPE(Seasons.WINTER, "crop.grape", 16, 25, 24, 18, false),
     PUMPKIN(Seasons.AUTUMN, "crop.pumpkin", 32, 25, 32, 20, true);
 
+    public static final CropID id = CropID.WHEAT;
     private static final Random random = new Random();
     private final Seasons season;
     private final String name;
@@ -83,7 +84,7 @@ public enum CropID implements Item {
      * @param currentSeason the season to filter crops by
      * @return a random CropID valid for the season
      */
-    public static CropID random(Seasons currentSeason) {
+    public CropID random(Seasons currentSeason) {
         CropID[] seasonalCrops = Arrays.stream(CropID.values())
                 .filter(c -> c.getSeason() == currentSeason)
                 .toArray(CropID[]::new);

@@ -34,13 +34,13 @@ public class Farm {
     private final String day;
 
     private int SIZE = 2;
-    private int water;
+    private int water = 100;
     private int days;
     private int dryDay;
     private float hours;
 
-    private Weather weather;
-    private Seasons season;
+    private Weather weather = Weather.SUNNY;
+    private Seasons season = Seasons.WINTER;
     private String[] previousArgs;
     private String lastCommand = "foo";
 
@@ -57,8 +57,6 @@ public class Farm {
         this.addCommands();
 
         this.day = Localization.lang.t("game.day");
-        this.weather = Weather.SUNNY;
-        this.season = Seasons.SPRING;
         this.upgrades = new ArrayList<>();
         upgrades.add(Upgrades.NULL);
 
@@ -164,13 +162,15 @@ public class Farm {
         for(int row = 0; row < SIZE; row++) {
             for(int col = 0; col < SIZE; col++) {
                 Tile tile = tiles[row][col];
-                if(dryDay > 4) {
-                    console().print("[X] ");
-                    if (tile != null && tile.crop() != null) tile.crop().wither();
-                } else if (tile == null || tile.crop() == null) {
+                if(tile == null || tile.crop() == null) {
                     console().print("[ ] ");
                 } else {
-                    console().print("[" + tile.crop().getChar() + "] ");
+                    if(tile.crop().getHydration() == Hydration.NONE) {
+                        tile.crop().wither();
+                        console().print("[X] ");
+                    } else {
+                        console().print("[" + tile.crop().getChar() + "] ");
+                    }
                 }
             }
             console().println();
@@ -356,6 +356,8 @@ public class Farm {
         weather = Weather.getRandomWeather();
         if(Objects.equals(weather, Weather.DRY)) {
             dryDay++;
+        } else {
+            dryDay = 0;
         }
         console().println(weather.message());
     }
@@ -367,7 +369,7 @@ public class Farm {
     private void plant(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.PLANT)) {
             for(Pos pos : index()) {
-                tiles[pos.row()][pos.col()] = new Tile(new Crop(CropID.random(season)),
+                tiles[pos.row()][pos.col()] = new Tile(new Crop(CropID.id.random(season)),
                         Soil.SILT, Fertilizer.NONE);
             }
             return;
@@ -397,7 +399,7 @@ public class Farm {
             return;
         }
 
-        tiles[row][col] = new Tile(new Crop(CropID.random(season)),
+        tiles[row][col] = new Tile(new Crop(CropID.id.random(season)),
                 Soil.SILT, Fertilizer.NONE);
         console().println(Localization.lang.t("game.plant.success", row, col));
     }
