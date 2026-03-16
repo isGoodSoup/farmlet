@@ -34,7 +34,7 @@ public final class Game {
     private final List<Upgrades> upgrades;
     private final String day;
 
-    private int SIZE = 12;
+    private int SIZE = 4;
     private float water = 100f;
     private int days;
     private int dryDay;
@@ -119,17 +119,21 @@ public final class Game {
     private void run() {
         String input = console().reply(player.name()).trim();
         if(input.isEmpty()) { return; }
-        String[] parts = input.split("\\s+");
-        String command = parts[0].toLowerCase();
-        Consumer<String[]> action = console().cmd().get(command);
-        if(action != null) {
-            action.accept(parts);
-            if(!command.equals(".")) {
-                lastCommand = command;
-                previousArgs = parts.clone();
+        String[] chain = input.split("\\s*&&\\s*");
+        for(String cmd : chain) {
+            String[] parts = cmd.trim().split("\\s+");
+            if(parts.length == 0) { continue; }
+            String command = parts[0].toLowerCase();
+            Consumer<String[]> action = console().cmd().get(command);
+            if(action != null) {
+                action.accept(parts);
+                if(!command.equals(".")) {
+                    lastCommand = command;
+                    previousArgs = parts.clone();
+                }
+            } else {
+                console().error("Unknown command: " + command);
             }
-        } else {
-            console().error("Unknown command");
         }
     }
 
@@ -145,6 +149,7 @@ public final class Game {
         console().cmd().put("water", this::irrigate);
         console().cmd().put("plant", this::plant);
         console().cmd().put("get", this::get);
+        console().cmd().put("view", this::update);
         console().cmd().put("show", args -> update());
         console().cmd().put("inv", args -> showInventory());
         console().cmd().put("time", args -> showTime());
@@ -156,34 +161,26 @@ public final class Game {
     }
 
     /**
-     * Displays the current farm grid and crop status.
-     * Shows [X] for withered crops, [ ] for empty, [H] for harvestable, or
-     * the first letter of the growth stage otherwise.
+     * Displays the entire farm grid to the console.
+     * <p>
+     * This method is equivalent to calling {@link #update(String[])}
+     * with coordinates covering the whole farm, from (0,0) to (SIZE,SIZE).
+     * It shows each tile as follows:
+     * <ul>
+     *     <li>[ ] for empty plots</li>
+     *     <li>[X] for withered crops</li>
+     *     <li>[S], [G], [M], [H] etc. for crops in various growth stages</li>
+     * </ul>
+     * The output includes row and column indices for reference.
+     * </p>
+     * <p>
+     * This method is used internally as the default "show" command and
+     * can also be called directly to display the entire grid.
+     * </p>
      */
     private void update() {
-        console().print("    ");
-        for (int col = 0; col < SIZE; col++) {
-            console().print(String.format("%-4d", col));
-        }
-        console().println();
-
-        for(int row = 0; row < SIZE; row++) {
-            console().print(String.format("%-3d", row));
-            for(int col = 0; col < SIZE; col++) {
-                Tile tile = tiles[row][col];
-                if(tile == null || tile.crop() == null) {
-                    console().print("[ ] ");
-                } else if(tile.crop().getHydration() == Hydration.NONE) {
-                    tile.crop().wither();
-                    console().print("[X] ", Console.BRIGHT_RED);
-                } else {
-                    console().print("[" + tile.crop().getChar() + "] ",
-                            Console.BRIGHT_GREEN);
-                }
-            }
-
-            console().println();
-        }
+        update(new String[]{"show", "0", "0", String.valueOf(SIZE),
+                String.valueOf(SIZE)});
     }
 
     /**
