@@ -1,5 +1,7 @@
 package com.soup.game.enums;
 
+import com.soup.game.world.Crop;
+
 /**
  * Represents the hydration level of a crop.
  *
@@ -16,5 +18,21 @@ package com.soup.game.enums;
  * </ul>
  */
 public enum Hydration {
-    NONE, LOW, MID, HIGH, MAX
+    NONE, LOW, MID, HIGH, MAX;
+
+    /**
+     * The hydration level decays every day by one grade
+     * IF the player did not water the {@link Crop} that day
+     * @return
+     */
+    @SuppressWarnings("DuplicateBranchesInSwitch")
+    public Hydration decay() {
+        switch (this) {
+            case MAX -> { return HIGH; }
+            case HIGH -> { return MID; }
+            case MID -> { return LOW; }
+            case LOW -> { return NONE; }
+            default -> { return NONE; }
+        }
+    }
 }

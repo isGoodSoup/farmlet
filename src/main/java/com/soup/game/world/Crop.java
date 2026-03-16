@@ -26,6 +26,7 @@ public final class Crop {
     private boolean wasHarvested;
     private boolean canHarvest;
     private boolean canRegrow;
+    private boolean wasWatered;
     private boolean isWithered;
 
     /**
@@ -172,6 +173,21 @@ public final class Crop {
      */
     public void water(Hydration hydration) {
         this.hydration = hydration;
+        wasWatered = true;
+    }
+
+    /**
+     * As in real life farming, when the crop is neglected with
+     * no hydration, it dries, to the point of withering.
+     */
+    public void decay() {
+        if(!wasWatered) {
+            hydration = hydration.decay();
+            if(hydration == Hydration.NONE) {
+                wither();
+            }
+        }
+        wasWatered = false;
     }
 
     /**

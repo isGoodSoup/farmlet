@@ -277,42 +277,19 @@ public class Farm {
      * and withers crops with no water.
      */
     private void updateHydration() {
-        int noneCount = 0, lowCount = 0, midCount = 0, highCount = 0, maxCount = 0;
+        int totalHydration = 0;
+        int cropCount = 0;
 
         for(Pos pos : index()) {
-            Hydration hydration = null;
             Tile tile = tiles[pos.row()][pos.col()];
             if(tile != null && tile.crop() != null) {
-                hydration = tile.crop().getHydration();
-            }
-            if (hydration != null) {
-                switch(hydration) {
-                    case NONE -> {
-                        noneCount++;
-                        tile.crop().wither();
-                    }
-                    case LOW -> {
-                        lowCount++;
-                        tile.crop().water(Hydration.NONE);
-                    }
-                    case MID -> {
-                        midCount++;
-                        tile.crop().water(Hydration.LOW);
-                    }
-                    case HIGH -> {
-                        highCount++;
-                        tile.crop().water(Hydration.MID);
-                    }
-                    case MAX -> {
-                        maxCount++;
-                        tile.crop().water(Hydration.HIGH);
-                    }
-                }
+                tile.crop().decay();
+                totalHydration += tile.crop().getHydration().ordinal();
+                cropCount++;
             }
         }
 
-        int[] counts = {noneCount, lowCount, midCount, highCount, maxCount};
-        int average = Arrays.stream(counts).sum()/counts.length;
+        float average = cropCount > 0 ? (float) totalHydration/cropCount : 0f;
         console().println(Localization.lang.t("game.irrigate_crops", average));
     }
 
