@@ -571,19 +571,54 @@ public final class Game {
     }
 
     /**
-     * Waters all crops if the player has water available.
-     * @param args optional command arguments
+     * Waters a specific crop on the farm if the player has available water.
+     * <p>
+     * This method requires the player to specify the row and column of the crop
+     * they wish to water. If the specified tile contains a crop, its hydration
+     * level is set to {@link Hydration#HIGH}, and the player's water resource
+     * is decremented by 0.1. A success message is printed showing the remaining water.
+     * </p>
+     * <p>
+     * If the player does not have sufficient water, or if the specified tile
+     * is empty or out of bounds, an error message is printed and no changes
+     * are made to the farm.
+     * </p>
+     *
+     * <p>
+     * Usage example:
+     * <pre>
+     *   irrigate(new String[]{"water", "2", "0"}); // waters the crop at row 2, column 0
+     * </pre>
+     * </p>
+     *
+     * <p>
+     * Effects:
+     * <ul>
+     *     <li>Sets the hydration of the targeted crop to {@link Hydration#HIGH}.</li>
+     *     <li>Decrements the player's water resource by 0.1.</li>
+     *     <li>Prints a success message with the remaining water, or an error if watering fails.</li>
+     * </ul>
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] – the command name "water"</li>
+     *                 <li>args[1] – the row index of the crop to water</li>
+     *                 <li>args[2] – the column index of the crop to water</li>
+     *             </ul>
      */
     private void irrigate(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.irrigate.usage"), Console.PURPLE);
+            return;
+        }
+
         if(water > 0) {
-            for(Pos pos : index()) {
-                if(water <= 0) { break; }
-                Tile tile = tiles[pos.row()][pos.col()];
-                if(tile != null && tile.crop() != null) {
-                    tile.crop().water(Hydration.HIGH);
-                }
-                water -= 0.1f;
+            Tile tile = tiles[Integer.parseInt(args[1])][Integer.parseInt(args[2])];
+            if(tile != null && tile.crop() != null) {
+                tile.crop().water(Hydration.HIGH);
             }
+            water -= 0.1f;
             console().println(Localization.lang.t("game.irrigate.success", water),
                     Console.BRIGHT_GREEN);
         } else {
