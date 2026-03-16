@@ -18,12 +18,13 @@ import java.util.function.Consumer;
  * Represents a console-based farm game where the player can plant,
  * water, harvest crops, buy plots/upgrades, and manage resources
  * like coins and water.
- * <p>The farm maintains a grid of crops,
- * an inventory, a market, weather and upgrades.</p>
+ * <p>
+ * The farm maintains a grid of crops,
+ * an inventory, a market, weather and upgrades.
+ * </p>
  */
-
 @World
-public class Game {
+public final class Game {
     private static final int MAX_SIZE = 1024;
     private static final float HOURS = 24f;
     private final Player player;
