@@ -183,9 +183,11 @@ public final class Game {
                 } else {
                     if(tile.crop().getHydration() == Hydration.NONE) {
                         tile.crop().wither();
-                        console().print("[X] ");
+                        console().print("[X] ",
+                                Console.BRIGHT_RED);
                     } else {
-                        console().print("[" + tile.crop().getChar() + "] ");
+                        console().print("[" + tile.crop().getChar() + "] ",
+                                Console.BRIGHT_GREEN);
                     }
                 }
             }

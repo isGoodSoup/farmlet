@@ -71,6 +71,15 @@ public class Console {
     }
 
     /**
+     * Prints text to standard output without newline (color).
+     * @param str text to print
+     * @param color color of text
+     */
+    public void print(String str, String color) {
+        System.out.print(color + str + RESET);
+    }
+
+    /**
      * Prints text to standard output without newline.
      * @param str text to print
      */
