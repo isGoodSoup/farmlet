@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  */
 @World
 public final class Game {
-    private static final int MAX_SIZE = 1024;
+    private static final int MAX_SIZE = 512;
     private static final float HOURS = 24f;
     private final Player player;
     private final Tile[][] tiles;
@@ -34,7 +34,7 @@ public final class Game {
     private final List<Upgrades> upgrades;
     private final String day;
 
-    private int SIZE = 16;
+    private int SIZE = 12;
     private float water = 100f;
     private int days;
     private int dryDay;
@@ -161,37 +161,27 @@ public final class Game {
      * the first letter of the growth stage otherwise.
      */
     private void update() {
-        boolean isRow = false, isCol = false;
-        String spacing = "   ";
+        console().print("    ");
+        for (int col = 0; col < SIZE; col++) {
+            console().print(String.format("%-4d", col));
+        }
+        console().println();
+
         for(int row = 0; row < SIZE; row++) {
+            console().print(String.format("%-3d", row));
             for(int col = 0; col < SIZE; col++) {
-                if(!isCol) {
-                    for(int i = 0; i < SIZE; i++) {
-                        console().print(spacing);
-                        console().print(col + i + "");
-                    }
-                    console().println();
-                    isCol = true;
-                }
-                if(!isRow) {
-                    console().print(row + " ");
-                    isRow = true;
-                }
                 Tile tile = tiles[row][col];
                 if(tile == null || tile.crop() == null) {
                     console().print("[ ] ");
+                } else if(tile.crop().getHydration() == Hydration.NONE) {
+                    tile.crop().wither();
+                    console().print("[X] ", Console.BRIGHT_RED);
                 } else {
-                    if(tile.crop().getHydration() == Hydration.NONE) {
-                        tile.crop().wither();
-                        console().print("[X] ",
-                                Console.BRIGHT_RED);
-                    } else {
-                        console().print("[" + tile.crop().getChar() + "] ",
-                                Console.BRIGHT_GREEN);
-                    }
+                    console().print("[" + tile.crop().getChar() + "] ",
+                            Console.BRIGHT_GREEN);
                 }
             }
-            isRow = false;
+
             console().println();
         }
     }
