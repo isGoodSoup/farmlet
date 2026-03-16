@@ -88,7 +88,29 @@ public final class Game {
         days = 0;
         totalCmd = 0;
         loop();
+        showEnding();
         showStats();
+    }
+
+    /**
+     * Displays the game ending message based on the number of days the player has survived.
+     * <p>
+     * The ending is determined as follows:
+     * <ul>
+     *     <li>Best Ending – if days &gt; 60</li>
+     *     <li>Good Ending – if days are between 15 (inclusive) and 60 (exclusive)</li>
+     *     <li>Bad Ending – if days &lt; 15</li>
+     * </ul>
+     * </p>
+     */
+    private void showEnding() {
+        if(days > 60) {
+            console().println(Localization.lang.t("game.end.best", days));
+        } else if(days >= 15 && days < 60) {
+            console().println(Localization.lang.t("game.end.good", days));
+        } else if(days < 15) {
+            console().println(Localization.lang.t("game.end.bad", days));
+        }
     }
 
     /**
@@ -1080,7 +1102,27 @@ public final class Game {
     }
 
     /**
-     * Displays current game statistics: total crops, days passed, and coins.
+     * Displays the current game statistics to the console.
+     * <p>
+     * The statistics include:
+     * <ul>
+     *     <li>The overall ending type based on the number of days passed
+     *     or if the game is over:
+     *         <ul>
+     *             <li>Worst Ending – if the game is over</li>
+     *             <li>Best Ending – if days &gt; 60</li>
+     *             <li>Good Ending – if days are between 15 and 60</li>
+     *             <li>Bad Ending – if days &lt; 15</li>
+     *         </ul>
+     *     </li>
+     *     <li>Total commands executed by the player</li>
+     *     <li>Total crops in the player's inventory</li>
+     *     <li>Number of days passed</li>
+     *     <li>Total water used</li>
+     *     <li>Player's current level</li>
+     *     <li>Player's coin balance</li>
+     * </ul>
+     * </p>
      */
     private void showStats() {
         StringBuilder sb = new StringBuilder(Localization.lang.t("game.stats"));
@@ -1088,10 +1130,10 @@ public final class Game {
             sb.append(", Worst Ending");
         } else if(days > 60) {
             sb.append(", Best Ending");
-        } else if(days > 30 && days < 60) {
+        } else if(days >= 15 && days <= 60) {
             sb.append(", Good Ending");
-        } else if(days < 30) {
-            sb.append(", Normal Ending");
+        } else if(days < 15) {
+            sb.append(", Bad Ending");
         }
         console().println(sb.toString(), Console.PURPLE);
         int totalCrops = 0;
@@ -1173,7 +1215,7 @@ public final class Game {
      */
     private void forceEnd() {
         isGameOver = true;
-        console().println(Localization.lang.t("game.end.ending2",
+        console().println(Localization.lang.t("game.end.worst",
                 player.name()),Console.BRIGHT_RED);
         lastCommand = "end";
     }
