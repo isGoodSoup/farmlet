@@ -117,22 +117,34 @@ public final class Game {
      * prints an error if the command is unknown
      */
     private void run() {
-        String input = console().reply(player.name()).trim();
-        if(input.isEmpty()) { return; }
-        String[] chain = input.split("\\s*&&\\s*");
-        for(String cmd : chain) {
-            String[] parts = cmd.trim().split("\\s+");
-            if(parts.length == 0) { continue; }
-            String command = parts[0].toLowerCase();
-            Consumer<String[]> action = console().cmd().get(command);
-            if(action != null) {
-                action.accept(parts);
-                if(!command.equals(".")) {
+        StringBuilder script = new StringBuilder();
+        String line;
+        do {
+            line = console().reply("").trim();
+            if(!line.equals(";")) {
+                script.append(line).append("\n");
+            }
+        } while(!line.equals(";"));
+
+        String[] lines = script.toString().split("\\R");
+        for (String l : lines) {
+            String[] chain = l.split("\\s*&&\\s*");
+            for (String cmd : chain) {
+                cmd = cmd.trim();
+                if(cmd.isEmpty()) { continue; }
+                String[] parts = cmd.trim().split("\\s+");
+                if (parts.length == 0) { continue; }
+                String command = parts[0].toLowerCase();
+                Consumer<String[]> action = console().cmd().get(command);
+                if (action != null) {
+                    action.accept(parts);
                     lastCommand = command;
-                    previousArgs = parts.clone();
                 }
-            } else {
-                console().error("Unknown command: " + command);
+                else console().error("Unknown command: " + parts[0]);
+            }
+
+            if(doSleep(lastCommand)) {
+                return;
             }
         }
     }
