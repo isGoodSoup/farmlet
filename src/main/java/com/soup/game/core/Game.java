@@ -885,7 +885,7 @@ public final class Game {
                 && upgrades.contains(Upgrades.FERTILIZER)) {
 
             Fertilizer fertilizer = Arrays.stream(Fertilizer.values())
-                    .filter(f -> Objects.equals(f.name(), args[1]))
+                    .filter(f -> f.name().equalsIgnoreCase(args[1]))
                     .findFirst()
                     .orElse(null);
 
@@ -912,13 +912,14 @@ public final class Game {
 
         Fertilizer fertilizer = null;
         for(Fertilizer f : Fertilizer.values()) {
-            if(Objects.equals(f.name(), args[1])) {
+            if(f.name().equalsIgnoreCase(args[1])) {
                 fertilizer = f;
             }
         }
 
         if(fertilizer == null) {
-            console().println(Localization.lang.t("game.fertilize.invalid"));
+            console().println(Localization.lang.t("game.fertilize.invalid"),
+                    Console.BRIGHT_RED);
             return;
         }
 
