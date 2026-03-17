@@ -989,8 +989,44 @@ public final class Game {
     }
 
     /**
-     * Opens the market for the player to buy plots,
-     * water, or upgrades. More to be added.
+     * Opens the in-game market and allows the player to purchase resources,
+     * upgrades, and farm expansions.
+     * <p>
+     * The market presents a list of purchasable items, each with a fixed cost.
+     * The player selects an option by entering its corresponding number.
+     * The loop continues while the player has sufficient funds or chooses
+     * to keep buying.
+     * </p>
+     *
+     * <p><b>Available purchases:</b></p>
+     * <ul>
+     *     <li><b>Water</b> – increases the player's available water supply.</li>
+     *     <li><b>Fertilizer</b> – adds a bundle of {@link Fertilizer#SPEED} and
+     *         {@link Fertilizer#YIELD} items to the player's inventory.</li>
+     *     <li><b>For-loop Upgrade</b> – unlocks the {@link Upgrades#FOR_LOOP}
+     *         command for repeated execution.</li>
+     *     <li><b>Plot Expansion</b> – increases the farm size by a fixed amount,
+     *         up to {@code MAX_SIZE}, and initializes new tiles.</li>
+     *     <li><b>Upgrades Bundle</b> – unlocks {@link Upgrades#HARVEST} and
+     *         {@link Upgrades#PLANT} commands.</li>
+     * </ul>
+     *
+     * <p><b>Behavior:</b></p>
+     * <ul>
+     *     <li>Displays all available items with aligned pricing.</li>
+     *     <li>Validates player input and ensures sufficient funds before purchase.</li>
+     *     <li>Deducts coins from the player's purse upon successful purchase.</li>
+     *     <li>Applies the corresponding effect immediately.</li>
+     *     <li>Terminates early if the player cannot afford a selected item.</li>
+     * </ul>
+     *
+     * <p><b>Notes:</b></p>
+     * <ul>
+     *     <li>The market is rebuilt on each invocation.</li>
+     *     <li>Prices are dynamically resolved from the internal {@code market} map.</li>
+     *     <li>Farm expansion recalculates tile indices via {@link #resize()}.</li>
+     *     <li>Fertilizer is granted in bulk rather than applied directly to tiles.</li>
+     * </ul>
      */
     private void buy() {
         market.clear();
