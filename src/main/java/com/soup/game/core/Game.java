@@ -452,11 +452,17 @@ public final class Game {
      */
     private void runFor(int times, String[] tokens, int pos,
                         Map<String, Integer> indices, int depth) {
+        if (times <= 0) { return; }
+        int bodyEnd = pos + 1;
+        while(bodyEnd < tokens.length && !tokens[bodyEnd].equals("for")) {
+            bodyEnd++;
+        }
+
+        String[] bodyTokens = Arrays.copyOfRange(tokens, pos, bodyEnd);
         for(int i = 0; i < times; i++) {
-            Map<String, Integer> itIndices = new LinkedHashMap<>(indices);
-            String indexLetter = letter(depth);
-            itIndices.put(indexLetter, i);
-            execute(tokens, pos, itIndices, depth + 1);
+            Map<String, Integer> loopIndices = new LinkedHashMap<>(indices);
+            loopIndices.put(letter(depth), i); // +i, +j, +k, etc.
+            execute(bodyTokens, 0, loopIndices, depth + 1);
         }
     }
 
@@ -493,11 +499,10 @@ public final class Game {
      */
     private void execute(String[] tokens, int pos,
                          Map<String, Integer> indices, int depth) {
-
-        if(pos >= tokens.length) { return; }
+        if (pos >= tokens.length) { return; }
         String token = tokens[pos];
-        if(token.equals("for")) {
-            if(pos + 1 >= tokens.length) {
+        if (token.equals("for")) {
+            if (pos + 1 >= tokens.length) {
                 console().println(Localization.lang.t("game.for.usage"), Console.PURPLE);
                 return;
             }
@@ -515,12 +520,12 @@ public final class Game {
                     return;
                 }
             }
-            runFor(nestedTimes, tokens, pos + 2, indices, depth + 1);
+            runFor(nestedTimes, tokens, pos + 2, indices, depth);
             return;
         }
 
-        if(token.equals("if")) {
-            if(pos + 3 >= tokens.length) {
+        if (token.equals("if")) {
+            if (pos + 3 >= tokens.length) {
                 console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
                 return;
             }
@@ -546,7 +551,7 @@ public final class Game {
         }
 
         Consumer<String[]> action = console().cmd().get(token);
-        if(action == null) {
+        if (action == null) {
             console().println(Localization.lang.t("game.cmd.unknown", token), Console.RED);
             return;
         }
