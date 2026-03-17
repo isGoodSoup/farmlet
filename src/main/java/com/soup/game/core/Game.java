@@ -569,6 +569,8 @@ public final class Game {
                         inventory().getQuantity(tile.crop().getId())), Console.PURPLE);
                 player.update(tile.crop().getId().getXp());
             }
+            console().println(Localization.lang.t("game.harvest.success.all"),
+                    Console.BRIGHT_GREEN);
             return;
         }
 
@@ -781,6 +783,8 @@ public final class Game {
                 tiles[row][col] = new Tile(new Crop(CropID.id.random(season)),
                         Soil.SILT, Fertilizer.NONE);
             }
+            console().println(Localization.lang.t("game.plant.success.all"),
+                    Console.BRIGHT_GREEN);
             return;
         }
 
@@ -816,6 +820,57 @@ public final class Game {
                 Console.BRIGHT_GREEN);
     }
 
+    /**
+     * Applies a specified {@link Fertilizer} to a farm tile at the given coordinates,
+     * or to multiple tiles if the appropriate upgrade and arguments are provided.
+     * <p>
+     * The method parses the fertilizer type and target coordinates from the input
+     * arguments, validates them, and updates the corresponding {@link Tile} by
+     * attaching the selected fertilizer.
+     * </p>
+     *
+     * <p><b>Usage:</b></p>
+     * <ul>
+     *     <li>{@code fertilize <type> <row> <col>} – applies the given fertilizer
+     *         to a single tile.</li>
+     *     <li>{@code fertilize <type> all} – applies the fertilizer using special
+     *         logic if the {@link Upgrades#FERTILIZER} upgrade is unlocked.</li>
+     * </ul>
+     *
+     * <p><b>Behavior:</b></p>
+     * <ul>
+     *     <li>Validates that coordinates are numeric and within farm bounds.</li>
+     *     <li>Resolves the fertilizer type from the provided argument.</li>
+     *     <li>Updates the tile by replacing it with a new instance containing the
+     *         selected fertilizer.</li>
+     *     <li>Prints a success message upon successful application.</li>
+     * </ul>
+     *
+     * <p><b>Errors:</b></p>
+     * <ul>
+     *     <li>If fertilizer is invalid, an error is printed and operation aborted</li>
+     *     <li>If fertilizer is already applied, an error is printed and operation aborted</li>
+     *     <li>If coordinates are invalid or not numeric, an error is printed.</li>
+     *     <li>If arguments are insufficient, usage instructions are displayed.</li>
+     *     <li>If coordinates are out of bounds, the operation is aborted.</li>
+     * </ul>
+     *
+     * <p><b>Notes:</b></p>
+     * <ul>
+     *     <li>Fertilizer effects are applied at the tile level and influence crop
+     *         growth, yield, or water retention depending on type.</li>
+     *     <li>This method does not validate whether the tile already contains a crop.</li>
+     *     <li>Fertilizer matching is based on enum name equality.</li>
+     * </ul>
+     *
+     * @param args command arguments where:
+     *             <ul>
+     *                 <li>{@code args[0]} – command name ("fertilize")</li>
+     *                 <li>{@code args[1]} – fertilizer type (must match {@link Fertilizer} enum)</li>
+     *                 <li>{@code args[2]} – row index or keyword "all"</li>
+     *                 <li>{@code args[3]} – column index (required for single-tile application)</li>
+     *             </ul>
+     */
     private void fertilize(String[] args) {
         int row, col;
         try {
@@ -826,18 +881,21 @@ public final class Game {
             return;
         }
 
-        if(args.length < 4 && upgrades.contains(Upgrades.FERTILIZER)
-                && console().equals(args[2], "all")) {
-            Fertilizer fertilizer = null;
-            for(Fertilizer f : Fertilizer.values()) {
-                if(Objects.equals(f.name(), args[1])) {
-                    fertilizer = f;
+        if(args.length >= 3 && console().equals(args[2], "all")
+                && upgrades.contains(Upgrades.FERTILIZER)) {
+
+            Fertilizer fertilizer = Arrays.stream(Fertilizer.values())
+                    .filter(f -> Objects.equals(f.name(), args[1]))
+                    .findFirst()
+                    .orElse(null);
+
+            for(int r = 0; r < SIZE; r++) {
+                for(int c = 0; c < SIZE; c++) {
+                    tiles[r][c] = tiles[r][c].withFertilizer(fertilizer);
                 }
             }
 
-            Tile tile = tiles[row][col].withFertilizer(fertilizer);
-            tiles[row][col] = tile;
-            console().println(Localization.lang.t("game.fertilize.success", row, col));
+            console().println(Localization.lang.t("game.fertilize.success.all"));
             return;
         }
 
@@ -857,6 +915,17 @@ public final class Game {
             if(Objects.equals(f.name(), args[1])) {
                 fertilizer = f;
             }
+        }
+
+        if(fertilizer == null) {
+            console().println(Localization.lang.t("game.fertilize.invalid"));
+            return;
+        }
+
+        if(tiles[row][col].fertilizer() != Fertilizer.NONE) {
+            console().println(Localization.lang.t("game.fertilize.done"),
+                    Console.BRIGHT_RED);
+            return;
         }
 
         Tile tile = tiles[row][col].withFertilizer(fertilizer);
