@@ -233,7 +233,8 @@ public final class Game {
                 cmd = cmd.trim();
                 if(cmd.isEmpty()) { continue; }
                 String[] tokens = tokenize(cmd);
-                runFor(1, tokens, 0, new LinkedHashMap<>(), 0);
+//                runFor(1, tokens, new LinkedHashMap<>(), 0);
+                execute(tokens, 0, new LinkedHashMap<>(), 0);
             }
         }
     }
@@ -442,21 +443,14 @@ public final class Game {
      * </p>
      *
      * @param times   the number of iterations to execute; must be {@code > 0}
-     * @param tokens  the full tokenized command sequence
-     * @param pos     the current position in the token array where execution begins
      * @param indices a map of active loop indices (e.g. {@code i -> 0, j -> 2})
      * @param depth   the current nesting depth, used to determine index variable names
      *
      * @see #execute(String[], int, Map, int)
      * @see #letter(int)
      */
-    private void runFor(int times, String[] tokens, int pos,
-                        Map<String, Integer> indices, int depth) {
-        if (times <= 0) return;
-        int bodyEnd = endFor(tokens, pos + 2);
-        String[] bodyTokens = Arrays.copyOfRange(tokens, pos, bodyEnd);
-
-        for(int i = 0; i < times; i++) {
+    private void runFor(int times, String[] bodyTokens, Map<String, Integer> indices, int depth) {
+        for (int i = 0; i < times; i++) {
             indices.put(letter(depth), i);
             execute(bodyTokens, 0, indices, depth + 1);
             indices.remove(letter(depth));
@@ -472,10 +466,12 @@ public final class Game {
      */
     private int endFor(String[] tokens, int start) {
         int depth = 0;
-        for(int i = start; i < tokens.length; i++) {
+        for (int i = start; i < tokens.length; i++) {
             if(tokens[i].equals("for")) depth++;
-            if(depth > 0 && tokens[i].equals("end")) depth--;
-            if(depth == 0) return i;
+            if(tokens[i].equals("end")) {
+                if(depth == 0) { return i; }
+                depth--;
+            }
         }
         return tokens.length;
     }
@@ -492,7 +488,7 @@ public final class Game {
      *
      * <p>
      * If the current token is {@code "for"}, the method parses the iteration count
-     * from the next token and delegates execution to {@link #runFor(int, String[], int, Map, int)}.
+     * from the next token and delegates execution to {@link #runFor(int, String[], Map, int)}.
      * Otherwise, the token is treated as a command name and executed with all remaining
      * tokens as arguments.
      * </p>
@@ -508,7 +504,7 @@ public final class Game {
      * @param indices a map of active loop indices
      * @param depth   the current nesting depth for loop index resolution
      *
-     * @see #runFor(int, String[], int, Map, int)
+     * @see #runFor(int, String[], Map, int)
      * @see #replace(String[], Map)
      */
     private void execute(String[] tokens, int pos,
@@ -516,7 +512,7 @@ public final class Game {
         if(pos >= tokens.length) { return; }
         String token = tokens[pos];
         if(token != null && token.equals("for")) {
-            if (pos + 1 >= tokens.length) {
+            if(pos + 1 >= tokens.length) {
                 console().println(Localization.lang.t("game.for.usage"), Console.PURPLE);
                 return;
             }
@@ -529,14 +525,16 @@ public final class Game {
             } else {
                 try {
                     nestedTimes = Integer.parseInt(rawTimes.toString());
-                } catch (Exception e) {
+                } catch(Exception e) {
                     console().error("Invalid number of times: " + tokens[pos + 1]);
                     return;
                 }
             }
+
             int bodyEnd = endFor(tokens, pos + 2);
             String[] subTokens = Arrays.copyOfRange(tokens, pos + 2, bodyEnd);
-            runFor(nestedTimes, subTokens, 0, indices, depth);
+            runFor(nestedTimes, subTokens, indices, depth);
+            execute(tokens, bodyEnd + 1, indices, depth);
             return;
         }
 
