@@ -1,9 +1,11 @@
 package com.soup.game.ent;
 
+import com.soup.game.enums.AnimalType;
 import com.soup.game.enums.Phase;
 import com.soup.game.enums.Product;
 import com.soup.game.enums.Sex;
 import com.soup.game.intf.Entity;
+import com.soup.game.service.Console;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,35 +108,23 @@ import java.util.List;
 public abstract class Animal {
     private final String name;
     private final Sex sex;
-    private final Product product;
+    private final AnimalType animalType;
     private final List<Product> products;
     private final List<Animal> children;
-    private final float height;
-    private final float weight;
+    private int weight;
+    private int height;
+    private Enum<?> trait;
     private Phase phase;
     private int happiness;
     private int hunger;
     private boolean isAlive;
 
-    /**
-     * Constructs a new animal with the specified name, primary product,
-     * height, and weight. Initializes happiness, hunger, life phase, and status.
-     *
-     * @param name    the animal's name
-     * @param sex     the animal's sex
-     * @param product the main product the animal produces
-     * @param height  the animal's height
-     * @param weight  the animal's weight
-     */
-    public Animal(String name, Sex sex, Product product,
-                  float height, float weight) {
+    public Animal(String name, Sex sex, AnimalType animalType) {
         this.name = name;
+        this.animalType = animalType;
         this.sex = sex;
-        this.product = product;
         this.products = new ArrayList<>();
         this.children = new ArrayList<>();
-        this.height = height;
-        this.weight = weight;
         this.phase = Phase.NEWBORN;
         this.happiness = 100;
         this.hunger = 0;
@@ -168,7 +158,7 @@ public abstract class Animal {
      * This method models sexual reproduction between two compatible animals.
      * Offspring are initialized with randomized attributes where appropriate and
      * inherit the type of their parents. The method does not handle population
-     * registration; the caller (e.g., {@link Barn}) is
+     * registration; the caller (e.g. Barn) is
      * responsible for adding newborns to the simulation.
      * </p>
      *
@@ -191,7 +181,32 @@ public abstract class Animal {
      *
      * @see #canBreedWith(Animal)
      */
-    public abstract Animal breed(Animal partner);
+    public Animal breed(Animal partner) {
+        if (!canBreedWith(partner)) return null;
+        Class<? extends Animal> cls = (Class<? extends Animal>) this.getClass();
+
+        Animal child;
+        try {
+            child = cls.getConstructor(String.class)
+                    .newInstance(Animal.name());
+        } catch (Exception e) {
+            Console.cli.error(e.getMessage());
+            return null;
+        }
+
+        int childHeight = (this.getHeight() + partner.getHeight()) / 2
+                + (int)((Math.random() - 0.5) * 10);
+        int childWeight = (this.getWeight() + partner.getWeight()) / 2
+                + (int)((Math.random() - 0.5) * 20);
+
+        child.setHeight(childHeight);
+        child.setWeight(childWeight);
+
+        if(this.getTrait() != null && partner.getTrait() != null) {
+            child.setTrait(Math.random() < 0.5 ? this.getTrait() : partner.getTrait());
+        }
+        return child;
+    }
 
     /**
      * Returns the localized display name of this animal.
@@ -251,6 +266,22 @@ public abstract class Animal {
         return sex;
     }
 
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
     public List<Product> getProducts() {
         return products;
     }
@@ -263,16 +294,20 @@ public abstract class Animal {
         return phase;
     }
 
-    public Product getProduct() {
-        return product;
-    }
-
     public int getHappiness() {
         return happiness;
     }
 
     public int getHunger() {
         return hunger;
+    }
+
+    public void setTrait(Enum<?> trait) {
+        this.trait = trait;
+    }
+
+    public Enum<?> getTrait() {
+        return trait;
     }
 
     /**
@@ -288,7 +323,7 @@ public abstract class Animal {
      *     <li>Both animals must be non-null</li>
      *     <li>Both animals must be alive</li>
      *     <li>Both animals must be of the same concrete type</li>
-     *     <li>Animals must be of opposite {@link com.soup.game.enums.Sex}</li>
+     *     <li>Animals must be of opposite {@link Sex}</li>
      * </ul>
      *
      * @param other the potential breeding partner

@@ -1,6 +1,7 @@
 package com.soup.game.ent.barn;
 
 import com.soup.game.ent.Animal;
+import com.soup.game.enums.AnimalType;
 import com.soup.game.enums.Product;
 import com.soup.game.enums.Sex;
 import com.soup.game.intf.Entity;
@@ -9,7 +10,7 @@ import com.soup.game.service.Localization;
 @Entity(type = "animal")
 public class Horse extends Animal {
     public Horse(String name) {
-        super(name, Sex.random(), Product.NONE, 2.0f, (float) (Math.random() * 100f));
+        super(name, Sex.random(), AnimalType.HORSE);
     }
 
     @Override
@@ -34,7 +35,6 @@ public class Horse extends Animal {
 
     @Override
     public Animal breed(Animal partner) {
-        if(!canBreedWith(partner)) { return null; }
-        return new Horse(name());
+        return super.breed(partner);
     }
 }
