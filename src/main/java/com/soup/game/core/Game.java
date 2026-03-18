@@ -85,7 +85,7 @@ import java.util.function.Consumer;
  * @see #run()
  * @author isGoodSoup
  * @version 1.8
- * @since F1.0
+ * @since 1.0
  */
 @World
 public final class Game {
