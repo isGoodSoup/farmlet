@@ -452,18 +452,32 @@ public final class Game {
      */
     private void runFor(int times, String[] tokens, int pos,
                         Map<String, Integer> indices, int depth) {
-        if (times <= 0) { return; }
-        int bodyEnd = pos + 1;
-        while(bodyEnd < tokens.length && !tokens[bodyEnd].equals("for")) {
-            bodyEnd++;
-        }
-
+        if (times <= 0) return;
+        int bodyEnd = endFor(tokens, pos + 2);
         String[] bodyTokens = Arrays.copyOfRange(tokens, pos, bodyEnd);
+
         for(int i = 0; i < times; i++) {
-            Map<String, Integer> loopIndices = new LinkedHashMap<>(indices);
-            loopIndices.put(letter(depth), i); // +i, +j, +k, etc.
-            execute(bodyTokens, 0, loopIndices, depth + 1);
+            indices.put(letter(depth), i);
+            execute(bodyTokens, 0, indices, depth + 1);
+            indices.remove(letter(depth));
         }
+    }
+
+    /**
+     * This method finds the for loop's String "end" and it retursn the tokens
+     * size given that end.
+     * @param tokens the amount of tokenized {@link String}
+     * @param start where in the tokens does it start
+     * @return tokens size
+     */
+    private int endFor(String[] tokens, int start) {
+        int depth = 0;
+        for(int i = start; i < tokens.length; i++) {
+            if(tokens[i].equals("for")) depth++;
+            if(depth > 0 && tokens[i].equals("end")) depth--;
+            if(depth == 0) return i;
+        }
+        return tokens.length;
     }
 
     /**
@@ -499,9 +513,9 @@ public final class Game {
      */
     private void execute(String[] tokens, int pos,
                          Map<String, Integer> indices, int depth) {
-        if (pos >= tokens.length) { return; }
+        if(pos >= tokens.length) { return; }
         String token = tokens[pos];
-        if (token.equals("for")) {
+        if(token != null && token.equals("for")) {
             if (pos + 1 >= tokens.length) {
                 console().println(Localization.lang.t("game.for.usage"), Console.PURPLE);
                 return;
@@ -520,11 +534,13 @@ public final class Game {
                     return;
                 }
             }
-            runFor(nestedTimes, tokens, pos + 2, indices, depth);
+            int bodyEnd = endFor(tokens, pos + 2);
+            String[] subTokens = Arrays.copyOfRange(tokens, pos + 2, bodyEnd);
+            runFor(nestedTimes, subTokens, 0, indices, depth);
             return;
         }
 
-        if (token.equals("if")) {
+        if(token != null && token.equals("if")) {
             if (pos + 3 >= tokens.length) {
                 console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
                 return;
