@@ -1,12 +1,15 @@
 package com.soup.game.ent;
 
 import com.soup.game.enums.Gamerule;
+import com.soup.game.enums.Upgrades;
 import com.soup.game.intf.Entity;
 import com.soup.game.service.Console;
 import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents the player in the game, including their level, experience, and inventory.
@@ -20,10 +23,12 @@ public class Player {
     private final String title;
     private final String name;
     private final Inventory inventory;
+    private final List<Upgrades> upgrades;
     private int level;
     private int experience;
     private int nextLevel;
     private int coin;
+    private float water = 100f;
 
     /**
      * Constructs a new Player with default values.
@@ -35,6 +40,7 @@ public class Player {
         title = Localization.lang.t("game.farm.title", name,
                 Localization.lang.t("game.farm"));
         this.inventory = new Inventory();
+        this.upgrades = new ArrayList<>();
         this.level = 1;
         this.experience = 0;
         this.nextLevel = 16;
@@ -82,6 +88,18 @@ public class Player {
      */
     public Inventory inventory() {
         return inventory;
+    }
+
+    public void add(Upgrades e) {
+        upgrades.add(e);
+    }
+
+    public boolean has(Upgrades e) {
+        return upgrades.contains(e);
+    }
+
+    public void remove(Upgrades e) {
+        upgrades.remove(e);
     }
 
     /**
@@ -154,4 +172,11 @@ public class Player {
         return coin;
     }
 
+    public float can() {
+        return water;
+    }
+
+    public float water(float i) {
+        return water += i;
+    }
 }

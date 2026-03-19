@@ -1,7 +1,13 @@
 package com.soup.game.cmd;
 
+import com.soup.game.ent.Player;
+import com.soup.game.enums.CropID;
+import com.soup.game.enums.Fertilizer;
+import com.soup.game.enums.Gamerule;
+import com.soup.game.enums.Upgrades;
 import com.soup.game.intf.Command;
 import com.soup.game.service.Console;
+import com.soup.game.service.Localization;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -56,13 +62,15 @@ import java.util.function.Consumer;
  * @since 1.9
  */
 public class Executor implements Command {
+    private final Player player;
     private final Parser parser;
     private final Registry registry;
     private String lastCommand;
     private String[] previousArgs;
     private int totalCmd;
 
-    public Executor(Parser parser, Registry registry) {
+    public Executor(Player player, Parser parser, Registry registry) {
+        this.player = player;
         this.parser = parser;
         this.registry = registry;
     }
@@ -347,6 +355,86 @@ public class Executor implements Command {
             case "==" -> a == b;
             default -> 0;
         };
+    }
+
+    /**
+     * Grants the player a specified quantity of an item, crop, upgrade,
+     * water, or gold.
+     * <p>
+     * The method first checks if the arguments are valid. Then it:
+     * <ul>
+     *     <li>Adds the specified crop to the player's inventory if it exists.</li>
+     *     <li>Adds the specified upgrade to the player's upgrades if it exists.</li>
+     *     <li>Adds the specified fertilizer to the player's inventory if it exists</li>
+     *     <li>Adds water or gold directly to the player if specified.</li>
+     * </ul>
+     * After applying the grant, the game is forcibly ended to reflect
+     * the immediate effect.
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] – the command name "give"</li>
+     *                 <li>args[1] – the item/upgrade/water/gold name</li>
+     *                 <li>args[2] – the quantity to give</li>
+     *             </ul>
+     */
+    public void give(String[] args) {
+        if(Gamerule.isEnabled(Gamerule.ENABLE_CHEATS)) {
+            if(args.length < 3) {
+                Console.cli.println(Localization.lang.t("game.give.usage"), Console.PURPLE);
+                return;
+            }
+
+            String item = args[1];
+            int quantity = Integer.parseInt(args[2]);
+
+            for(int i = 0; i < quantity; i++) {
+                CropID itemCrop;
+                for(CropID c : CropID.values()) {
+                    if(Console.cli.equals(c.getName(), item)) {
+                        itemCrop = c;
+                        player.inventory().add(itemCrop);
+                        break;
+                    }
+                }
+            }
+
+            for(int i = 0; i < quantity; i++) {
+                Upgrades upgrade;
+                for(Upgrades u : Upgrades.values()) {
+                    if(Console.cli.equals(u.name().toLowerCase(), item)) {
+                        upgrade = u;
+                        player.add(upgrade);
+                        break;
+                    }
+                }
+            }
+
+            for(int i = 0; i < quantity; i++) {
+                Fertilizer fertilizer;
+                for(Fertilizer f : Fertilizer.values()) {
+                    if(Console.cli.equals("f." + f.name().toLowerCase(), item)) {
+                        fertilizer = f;
+                        player.inventory().add(fertilizer);
+                        item = "fertilizer." + f.name().toLowerCase();
+                        break;
+                    }
+                }
+            }
+
+            if(Console.cli.equals(item, "water")) {
+                player.water(quantity);
+            }
+
+            if(Console.cli.equals(item, "gold")) {
+                player.earn(quantity);
+            }
+
+            Console.cli.println(Localization.lang.t("game.give.success",
+                    item, quantity), Console.BRIGHT_GREEN);
+//            forceEnd();
+        }
     }
 
     /**

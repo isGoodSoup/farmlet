@@ -1,5 +1,6 @@
 package com.soup.game.service;
 
+import com.soup.game.ent.Player;
 import com.soup.game.intf.Item;
 
 import java.util.*;
@@ -112,5 +113,20 @@ public class Inventory {
             total += list.size();
         }
         return total;
+    }
+
+    /**
+     * Shows all items and quantities in the player's inventory.
+     */
+    public void showInventory(Player player) {
+        if(player.inventory().isEmpty()) {
+            Console.cli.error(Localization.lang.t("game.inventory.empty"));
+            return;
+        }
+
+        for(Map.Entry<Item, Integer> entry : player.inventory().getAll().entrySet()) {
+            Console.cli.println(entry.getKey().getName() + " x" + entry.getValue(),
+                    Console.PURPLE);
+        }
     }
 }
