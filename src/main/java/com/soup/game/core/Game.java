@@ -354,6 +354,29 @@ public final class Game {
     }
 
     /**
+     * Registers all available gamerules
+     */
+    private void addGamerules() {
+        gamerules.addAll(Arrays.asList(Gamerule.values()));
+    }
+
+    private void gamerule(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.gamerule.usage"), Console.PURPLE);
+            return;
+        }
+
+        String str = args[1];
+        boolean value = Boolean.parseBoolean(args[2]);
+        int index = gamerules.indexOf(Gamerule.rule.keyOf(str));
+
+        Gamerule gamerule = gamerules.get(index);
+        gamerule.setValue(value);
+        console().println(Localization.lang.t("game.gamerule.success"),
+                Console.BRIGHT_GREEN);
+    }
+
+    /**
      * Displays the entire farm grid to the console.
      * <p>
      * This method is equivalent to calling {@link #update(String[])}
