@@ -58,6 +58,7 @@ public class GameLoop {
     private final Environment env;
     private final Executor executor;
     private String lastCommand;
+    private boolean isWaitingForMenu;
 
     /**
      * Creates a new game loop that orchestrates the simulation.
@@ -76,6 +77,16 @@ public class GameLoop {
         this.env = env;
         this.executor = executor;
         panel.setCommandListener(this::onCommand);
+    }
+
+    /**
+     * Show a generic menu of options/choices for the player
+     * @param strings params
+     */
+    public void menu(String... strings) {
+        for(String line : strings) {
+            panel.append(Localization.lang.t(line), Colors.BRIGHT_WHITE);
+        }
     }
 
     /**
@@ -102,6 +113,7 @@ public class GameLoop {
             panel.append(Localization.lang.t("game.end.worst"), Colors.MAGENTA);
             return;
         }
+
         executor.run(command);
         env.advanceTime(TIME_INCREMENT);
 

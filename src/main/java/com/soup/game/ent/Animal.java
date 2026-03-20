@@ -287,7 +287,7 @@ public abstract class Animal {
         }
         if(happiness < 20) {
             if(!wasUnhappyMessageSent) {
-                panel().append(Localization.lang.t("animal.unhappy" + "\n", getName(),
+                panel().append("\n" + Localization.lang.t("animal.unhappy", getName(),
                         getLocalizedName()), Colors.BRIGHT_PURPLE);
                 wasUnhappyMessageSent = true;
             }
@@ -297,7 +297,7 @@ public abstract class Animal {
 
         if(hunger > 60 || !wasFed || meals >= 2) {
             if(!wasHungryMessageSent) {
-                panel().append(Localization.lang.t("animal.hungry" + "\n", getName(),
+                panel().append("\n" + Localization.lang.t("animal.hungry", getName(),
                         getLocalizedName()), Colors.BRIGHT_RED);
                 wasHungryMessageSent = true;
             }
