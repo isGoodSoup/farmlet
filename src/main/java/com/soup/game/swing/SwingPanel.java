@@ -250,14 +250,6 @@ public class SwingPanel extends JPanel {
     }
 
     /**
-     * Exposes the {@link CommandListener} to other classes
-     * @return the {{@link #listener}} of the interface
-     */
-    public CommandListener listener() {
-        return listener;
-    }
-
-    /**
      * Sets the {@link CommandListener} value through listener
      * @param listener the value
      */

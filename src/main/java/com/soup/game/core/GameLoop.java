@@ -8,12 +8,12 @@ import com.soup.game.service.Localization;
 import com.soup.game.service.Pos;
 import com.soup.game.service.Stats;
 import com.soup.game.swing.SwingPanel;
-import com.soup.game.world.*;
-import com.soup.game.world.Choice;
+import com.soup.game.world.Barn;
+import com.soup.game.world.Environment;
+import com.soup.game.world.Farm;
+import com.soup.game.world.Tile;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <h1>Game Loop</h1>
@@ -58,7 +58,6 @@ public class GameLoop implements CommandListener {
     private final Barn barn;
     private final Environment env;
     private final Executor executor;
-    private List<Choice> choices;
     private String lastCommand;
 
     /**
@@ -77,103 +76,7 @@ public class GameLoop implements CommandListener {
         this.barn = barn;
         this.env = env;
         this.executor = executor;
-        this.choices = null;
         panel.setCommandListener(this);
-    }
-
-    /**
-     * Displays a list of selectable choices to the player and activates choice input mode.
-     * <p>
-     * This method renders a localized prompt followed by a list of options,
-     * each prefixed by its selection key e.g. "A)", "B)", etc.
-     * </p>
-     *
-     * <p>
-     * While choices are active, normal game command processing is suspended and
-     * input is routed to {@link #choiceInput(String)} until a valid selection is made.
-     * </p>
-     *
-     * @param prompt the localization key for the menu prompt/title
-     * @param choices the list of {@link Choice} objects representing available options
-     */
-    public void choices(String prompt, List<Choice> choices) {
-        panel.append(Localization.lang.t(prompt), Colors.BRIGHT_WHITE);
-        for(Choice c : choices) {
-            panel.append("\n" + c.key() + ") " + Localization.lang.t(c.text()),
-                    Colors.BRIGHT_WHITE);
-        }
-        this.choices = choices;
-    }
-
-    /**
-     * Handles user input while a choice menu is active.
-     * <p>
-     * The input is matched against the selection keys of the currently active choices.
-     * If a match is found:
-     * <ul>
-     *     <li>The choice menu is cleared</li>
-     *     <li>The corresponding action is executed</li>
-     * </ul>
-     * </p>
-     *
-     * <p>
-     * If the input does not match any available choice, a localized error message
-     * is displayed and the menu remains active.
-     * </p>
-     *
-     * @param input the user input representing a choice selection
-     */
-    private void choiceInput(String input) {
-        input = input.trim();
-        for (Choice c : choices) {
-            if (c.key().equalsIgnoreCase(input)) {
-                c.execute();
-                choices = null;
-                return;
-            }
-        }
-        panel.append(Localization.lang.t("game.error.selection"),
-                Colors.BRIGHT_RED);
-    }
-
-    /**
-     * Displays the main area interaction menu with contextual options.
-     * <p>
-     * This menu allows the player to choose between different locations or actions
-     * within the current area, such as:
-     * <ul>
-     *     <li>Checking the farm</li>
-     *     <li>Entering the barn</li>
-     *     <li>Leaving the area</li>
-     * </ul>
-     * </p>
-     *
-     * <p>
-     * Each option is represented as a {@link Choice} with a corresponding action
-     * that updates the game state or renders relevant information.
-     * </p>
-     *
-     * <p>
-     * The menu is rendered using localized text and processed via the
-     * choice interaction system.
-     * </p>
-     */
-    public void showArea() {
-        choices("game.choice.prompt-1", new ArrayList<>(List.of(
-                new Choice("A", "game.menu.main1A", () -> {
-                    panel.append(Localization.lang.t("game.menu.choice1A"),
-                            Colors.BRIGHT_BLACK);
-                    update();
-                }),
-                new Choice("B", "game.menu.main2A", () -> {
-                    panel.append(Localization.lang.t("game.menu.choice2A"),
-                            Colors.BRIGHT_BLACK);
-                    barn.update();
-                }),
-                new Choice("C", "game.menu.main3A", () ->
-                        panel.append(Localization.lang.t("game.menu.choice3A"),
-                        Colors.BRIGHT_BLACK))
-        )));
     }
 
     /**
@@ -189,18 +92,15 @@ public class GameLoop implements CommandListener {
     public void start() {
         panel.append("\n" + Localization.lang.t("game.day") + " " +
                 Stats.stat().days + "\n", Colors.GREEN);
-        showArea();
+        env.season();
+        env.weather();
+        update();
     }
 
     @Override
     public void onCommand(String command) {
         if(Stats.stat().isGameOver) {
             panel.append(Localization.lang.t("game.end.worst"), Colors.MAGENTA);
-            return;
-        }
-
-        if(choices != null) {
-            choiceInput(command);
             return;
         }
         game(command);
