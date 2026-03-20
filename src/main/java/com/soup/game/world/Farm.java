@@ -3,10 +3,8 @@ package com.soup.game.world;
 import com.soup.game.ent.Player;
 import com.soup.game.enums.*;
 import com.soup.game.intf.World;
-import com.soup.game.service.Console;
-import com.soup.game.service.Localization;
-import com.soup.game.service.Pos;
-import com.soup.game.service.Stats;
+import com.soup.game.service.*;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +69,7 @@ import java.util.Objects;
 @SuppressWarnings("all")
 @World(entity = "farm")
 public class Farm {
+    private final SwingPanel panel;
     private final List<List<Tile>> tiles;
     private final Player player;
     private final Environment env;
@@ -81,10 +80,12 @@ public class Farm {
      * Constructs a new {@code Farm} for the specified {@link Player} and {@link Environment}.
      * Initializes the farm grid with empty tiles and applies the NULL upgrade to the player.
      *
+     * @param panel
      * @param player the player who owns the farm
-     * @param env the environment affecting the farm (weather, seasons)
+     * @param env    the environment affecting the farm (weather, seasons)
      */
-    public Farm(Player player, Environment env) {
+    public Farm(SwingPanel panel, Player player, Environment env) {
+        this.panel = panel;
         this.tiles = new ArrayList<>();
         this.player = player;
         this.env = env;
@@ -133,7 +134,8 @@ public class Farm {
     /**
      * Populates or resizes the farm grid to the specified square size.
      * <p>
-     * - If the farm is empty, a new grid of {@code size × size} is created with all tiles set to {@code null}.
+     * - If the farm is empty, a new grid of {@code size × size} is created with
+     * all tiles set to {@code null}.
      * - If the grid exists:
      *   - Rows and columns are added or removed to match the target size.
      *   - Existing tiles are preserved where possible.
@@ -228,7 +230,7 @@ public class Farm {
      */
     public void harvest(String[] args) {
         if(args.length < 3 && player.has(Upgrades.HARVEST_UPGRADE)
-                && Console.cli.equals(args[1], "all")) {
+                && args[1].equalsIgnoreCase("all")) {
             for(Pos pos : letter()) {
                 int row = pos.row();
                 int col = pos.col();
@@ -245,18 +247,20 @@ public class Farm {
                 } else {
                     set(row, col, null);
                 }
-                Console.cli.println(Localization.lang.t("game.yields",
-                        player.inventory().getQuantity(tile.crop().getId())), Console.PURPLE);
+                panel.append(Localization.lang.t("game.yields",
+                        player.inventory().getQuantity(tile.crop().getId())),
+                        Colors.PURPLE);
                 player.update(tile.crop().getId().getXp());
                 tile.crop().resetYieldBonus();
             }
-            Console.cli.println(Localization.lang.t("game.harvest.success.all"),
-                    Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("game.harvest.success.all"),
+                    Colors.BRIGHT_GREEN);
             return;
         }
 
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.harvest.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.harvest.usage"),
+                    Colors.PURPLE);
             return;
         }
 
@@ -265,23 +269,27 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         if(row < 0 || row >= tiles.size() || col < 0 || col >= tiles.getFirst().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         Tile tile = get(row, col);
         if(tile.crop() == null) {
-            Console.cli.error(Localization.lang.t("game.harvest.nothing"));
+            panel.append(Localization.lang.t("game.harvest.nothing"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         if(!tile.crop().canHarvest()) {
-            Console.cli.error(Localization.lang.t("game.harvest.not_ready"));
+            panel.append(Localization.lang.t("game.harvest.not_ready"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
@@ -300,8 +308,8 @@ public class Farm {
         }
 
         tile.crop().resetYieldBonus();
-        Console.cli.println(Localization.lang.t("game.harvest.success",
-                tile.crop().getId().getName(), row, col), Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("game.harvest.success",
+                tile.crop().getId().getName(), row, col), Colors.BRIGHT_GREEN);
         player.update(tile.crop().getId().getXp());
     }
 
@@ -374,7 +382,7 @@ public class Farm {
      */
     public void plant(String[] args) {
         if(args.length >= 2 && player.has(Upgrades.PLANT_UPGRADE)
-                && Console.cli.equals(args[1], "all")) {
+                && args[1].equalsIgnoreCase("all")) {
             for(Pos pos : letter()) {
                 int row = pos.row();
                 int col = pos.col();
@@ -383,13 +391,13 @@ public class Farm {
                             Soil.SILT, Fertilizer.NONE));
                 }
             }
-            Console.cli.println(Localization.lang.t("game.plant.success.all"),
-                    Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("game.plant.success.all"),
+                    Colors.BRIGHT_GREEN);
             return;
         }
 
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.plant.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.plant.usage"), Colors.PURPLE);
             return;
         }
 
@@ -398,24 +406,24 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"), Colors.BRIGHT_RED);
             return;
         }
 
         if(row < 0 || row >= tiles.size() || col < 0 || col >= tiles.getFirst().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"), Colors.BRIGHT_RED);
             return;
         }
 
         if(get(row, col) != null) {
-            Console.cli.error(Localization.lang.t("game.plant.occupied"));
+            panel.append(Localization.lang.t("game.plant.occupied"), Colors.BRIGHT_RED);
             return;
         }
 
         set(row, col, new Tile(new Crop(CropID.id.random(env.getSeason())),
                 Soil.SILT, Fertilizer.NONE));
-        Console.cli.println(Localization.lang.t("game.plant.success", row, col),
-                Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("game.plant.success", row, col),
+                Colors.BRIGHT_GREEN);
     }
 
     /**
@@ -475,11 +483,12 @@ public class Farm {
             row = Integer.parseInt(args[2]);
             col = Integer.parseInt(args[3]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
-        if(args.length >= 3 && Console.cli.equals(args[2], "all")
+        if(args.length >= 3 && args[2].equalsIgnoreCase("all")
                 && player.has(Upgrades.FERTILIZER_UPGRADE)) {
 
             Fertilizer fertilizer = Arrays.stream(Fertilizer.values())
@@ -488,7 +497,8 @@ public class Farm {
                     .orElse(null);
 
             if(player.inventory().getQuantity(fertilizer) < tiles.size()) {
-                Console.cli.error(Localization.lang.t("game.fertilize.fail"));
+                panel.append(Localization.lang.t("game.fertilize.fail"),
+                        Colors.BRIGHT_RED);
                 return;
             }
 
@@ -501,17 +511,19 @@ public class Farm {
                 }
             }
 
-            Console.cli.println(Localization.lang.t("game.fertilize.success.all"));
+            panel.append(Localization.lang.t("game.fertilize.success.all"),
+                    Colors.BRIGHT_GREEN);
             return;
         }
 
         if(args.length < 4) {
-            Console.cli.println(Localization.lang.t("game.fertilize.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.fertilize.usage"), Colors.PURPLE);
             return;
         }
 
         if(row < 0 || row >= tiles.size() || col < 0 || col >= tiles.getFirst().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
@@ -523,22 +535,22 @@ public class Farm {
         }
 
         if(fertilizer == null) {
-            Console.cli.println(Localization.lang.t("game.fertilize.invalid"),
-                    Console.RED);
+            panel.append(Localization.lang.t("game.fertilize.invalid"),
+                    Colors.RED);
             return;
         }
 
         if(get(row, col).fertilizer() != Fertilizer.NONE) {
-            Console.cli.println(Localization.lang.t("game.fertilize.done"),
-                    Console.RED);
+            panel.append(Localization.lang.t("game.fertilize.done"),
+                    Colors.RED);
             return;
         }
 
         Tile tile = get(row, col).withFertilizer(fertilizer);
         set(row, col, tile);
         player.inventory().remove(fertilizer);
-        Console.cli.println(Localization.lang.t("game.fertilize.success", row, col),
-                Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("game.fertilize.success", row, col),
+                Colors.BRIGHT_GREEN);
     }
 
     /**
@@ -557,8 +569,8 @@ public class Farm {
      */
     public void get(String[] args) {
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.get_crop.usage"),
-                    Console.PURPLE);
+            panel.append(Localization.lang.t("game.get_crop.usage"),
+                    Colors.PURPLE);
             return;
         }
 
@@ -567,20 +579,22 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         if(row < 0 || row >= tiles.size() || col < 0 || col >= tiles.getFirst().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         Tile tile = get(row, col);
         if(tile != null && tile.crop() != null) {
             String id = tile.crop().getId().getName();
-            Console.cli.println(Localization.lang.t("game.get_crop", id, row, col),
-                    Console.PURPLE);
+            panel.append(Localization.lang.t("game.get_crop", id, row, col),
+                    Colors.PURPLE);
         }
     }
     
@@ -600,7 +614,7 @@ public class Farm {
      */
     public void rip(String[] args) {
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.rip.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.rip.usage"), Colors.PURPLE);
             return;
         }
 
@@ -609,18 +623,20 @@ public class Farm {
             row = Integer.parseInt(args[1]);
             col = Integer.parseInt(args[2]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         if(row < 0 || row >= tiles.size() || col < 0 || col >= tiles.getFirst().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         set(row, col, null);
-        Console.cli.println(Localization.lang.t("game.rip.success", row, col),
-                Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("game.rip.success", row, col),
+                Colors.BRIGHT_GREEN);
     }
 
     /**
@@ -662,7 +678,7 @@ public class Farm {
      */
     public void irrigate(String[] args) {
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.irrigate.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.irrigate.usage"), Colors.PURPLE);
             return;
         }
 
@@ -673,10 +689,11 @@ public class Farm {
             }
             player.water(-0.1f);
             Stats.stat.totalWater += 0.1f;
-            Console.cli.println(Localization.lang.t("game.irrigate.success", player.can()),
-                    Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("game.irrigate.success", player.can()),
+                    Colors.BRIGHT_GREEN);
         } else {
-            Console.cli.error(Localization.lang.t("game.irrigate.fail"));
+            panel.append(Localization.lang.t("game.irrigate.fail"),
+                    Colors.BRIGHT_RED);
         }
     }
 

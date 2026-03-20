@@ -1,5 +1,6 @@
 package com.soup.game.swing;
 
+import com.soup.game.intf.CommandListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +85,15 @@ public class SwingPanel extends JPanel {
     private final JTextField inputField;
     private final Queue<Runnable> queue = new LinkedList<>();
     private Font font;
+    private CommandListener listener;
 
     private boolean isTyping = false;
 
+    /**
+     * Constructs the {@link JTextPane}, {@link JScrollPane}, {@link JTextField} at runtime and
+     * creates a custom font from the /fonts/ folder. Sets the padding and amongst other values.
+     * @param frame
+     */
     public SwingPanel(JFrame frame) {
         this.frame = frame;
         this.gameLog = new JTextPane();
@@ -103,7 +110,7 @@ public class SwingPanel extends JPanel {
             gameLog.setFont(new Font("Monospaced", Font.PLAIN, 24));
         }
 
-        final int PADDING = 15;
+        final int PADDING = 20;
         gameLog.setEditable(false);
         gameLog.setFont(font);
         gameLog.setBackground(Color.BLACK);
@@ -127,6 +134,10 @@ public class SwingPanel extends JPanel {
             Color color = inputField.getForeground();
             inputField.setText("");
             process(command, color);
+            if(listener != null) {
+                SwingUtilities.invokeLater(() ->
+                        listener.onCommand(command));
+            }
         });
     }
 
@@ -225,5 +236,13 @@ public class SwingPanel extends JPanel {
      */
     public void focusInput() {
         SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
+    }
+
+    /**
+     * Sets the {@link CommandListener} value through listener
+     * @param listener the value
+     */
+    public void setCommandListener(CommandListener listener) {
+        this.listener = listener;
     }
 }

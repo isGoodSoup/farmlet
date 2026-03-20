@@ -1,9 +1,13 @@
 package com.soup.game.ent;
 
-import com.soup.game.enums.*;
+import com.soup.game.enums.AnimalType;
+import com.soup.game.enums.Phase;
+import com.soup.game.enums.Product;
+import com.soup.game.enums.Sex;
 import com.soup.game.intf.Entity;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,6 +106,7 @@ import java.util.List;
 @Entity
 @SuppressWarnings("all")
 public abstract class Animal {
+    private final SwingPanel panel;
     private final String name;
     private final Sex sex;
     private final AnimalType animalType;
@@ -117,7 +122,8 @@ public abstract class Animal {
     private boolean isAlive;
     private boolean wasFed;
 
-    public Animal(String name, Sex sex, AnimalType animalType) {
+    public Animal(SwingPanel panel, String name, Sex sex, AnimalType animalType) {
+        this.panel = panel;
         this.name = name;
         this.animalType = animalType;
         this.sex = sex;
@@ -129,6 +135,10 @@ public abstract class Animal {
         this.meals = 3;
         this.isAlive = true;
         this.wasFed = false;
+    }
+
+    public Animal(String name, Sex sex, AnimalType animalType) {
+        this(null, name, sex, animalType);
     }
 
     /**
@@ -214,7 +224,7 @@ public abstract class Animal {
             child = cls.getConstructor(String.class)
                     .newInstance(Animal.name());
         } catch (Exception e) {
-            Console.cli.error(e.getMessage());
+            panel.append(e.getMessage(), Colors.BRIGHT_RED);
             return null;
         }
 
@@ -269,13 +279,13 @@ public abstract class Animal {
             }
         }
         if(happiness < 20) {
-            console().println(Localization.lang.t("animal.unhappy", getName(),
-                            getLocalizedName()), Console.BLUE);
+            panel.append(Localization.lang.t("animal.unhappy", getName(),
+                            getLocalizedName()), Colors.BLUE);
         }
 
         if(hunger > 60 || !wasFed || meals >= 2) {
-            console().println(Localization.lang.t("animal.hungry", getName(),
-                            getLocalizedName(), Console.RED));
+            panel.append(Localization.lang.t("animal.hungry", getName(),
+                            getLocalizedName()), Colors.BRIGHT_RED);
         }
         sleep();
     }
@@ -447,18 +457,5 @@ public abstract class Animal {
      */
     public boolean wasFedToday() {
         return wasFed;
-    }
-
-    /**
-     * Returns the console service used for input/output operations.
-     * <p>
-     * This method provides access to the shared singleton instance
-     * of {@link Console} used throughout the application for printing
-     * messages and interacting with the command-line interface.
-     * </p>
-     * @return the global console service instance
-     */
-    private Console console() {
-        return Console.cli;
     }
 }

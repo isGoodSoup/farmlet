@@ -2,6 +2,7 @@ package com.soup.game.service;
 
 import com.soup.game.ent.Player;
 import com.soup.game.intf.Item;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.*;
 
@@ -13,7 +14,12 @@ import java.util.*;
  * or a summary of all items in the inventory.</p>
  */
 public class Inventory {
+    private final SwingPanel panel;
     private final Map<Item, List<Item>> items = new LinkedHashMap<>();
+
+    public Inventory(SwingPanel panel) {
+        this.panel = panel;
+    }
 
     /**
      * Adds a single item to the inventory.
@@ -120,13 +126,14 @@ public class Inventory {
      */
     public void showInventory(Player player) {
         if(player.inventory().isEmpty()) {
-            Console.cli.error(Localization.lang.t("game.inventory.empty"));
+            panel.append(Localization.lang.t("game.inventory.empty"),
+                    Colors.BRIGHT_RED);
             return;
         }
 
         for(Map.Entry<Item, Integer> entry : player.inventory().getAll().entrySet()) {
-            Console.cli.println(entry.getKey().getName() + " x" + entry.getValue(),
-                    Console.PURPLE);
+            panel.append(entry.getKey().getName() + " x" + entry.getValue(),
+                    Colors.PURPLE);
         }
     }
 }

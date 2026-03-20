@@ -6,10 +6,13 @@ import com.soup.game.enums.Fertilizer;
 import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Upgrades;
 import com.soup.game.intf.Command;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
+import com.soup.game.swing.SwingPanel;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -62,6 +65,7 @@ import java.util.function.Consumer;
  * @since 1.9
  */
 public class Executor implements Command {
+    private final SwingPanel panel;
     private final Player player;
     private final Parser parser;
     private final Registry registry;
@@ -69,7 +73,8 @@ public class Executor implements Command {
     private String[] previousArgs;
     private int totalCmd;
 
-    public Executor(Player player, Parser parser, Registry registry) {
+    public Executor(SwingPanel panel, Player player, Parser parser, Registry registry) {
+        this.panel = panel;
         this.player = player;
         this.parser = parser;
         this.registry = registry;
@@ -84,26 +89,20 @@ public class Executor implements Command {
      *
      * @see #doSleep()
      */
-    public void run() {
-        StringBuilder script = new StringBuilder();
-        String line;
-        do {
-            line = Console.cli.reply("").trim();
-            if(!Console.cli.equals(line, ";") || line.endsWith(";")) {
-                script.append(line).append("\n");
-            }
-        } while(!Console.cli.equals(line, ";") || !line.endsWith(";"));
+    public void run(String line) {
+        line = line.trim();
+        if (line.isEmpty()) return;
 
-        String[] lines = script.toString().split("\\R");
-        for(String l : lines) {
-            String[] chain = l.split("\\s*&&\\s*");
-            for(String cmd : chain) {
-                cmd = cmd.trim();
-                if(cmd.isEmpty()) continue;
+        lastCommand = line;
+        totalCmd++;
 
-                String[] tokens = parser.tokenize(cmd);
-                execute(tokens, 0, new LinkedHashMap<>(), 0);
-            }
+        String[] chain = line.split("\\s*&&\\s*");
+        for (String cmd : chain) {
+            cmd = cmd.trim();
+            if (cmd.isEmpty()) continue;
+
+            String[] tokens = parser.tokenize(cmd);
+            execute(tokens, 0, new LinkedHashMap<>(), 0);
         }
     }
 
@@ -175,12 +174,12 @@ public class Executor implements Command {
 
         if(token != null && token.equals("for")) {
             if(!player.has(Upgrades.FOR_LOOP)) {
-                Console.cli.error(Localization.lang.t("game.upgrade.locked"));
+                panel.append(Localization.lang.t("game.upgrade.locked"), Colors.BRIGHT_RED);
                 return;
             }
 
             if(pos + 1 >= tokens.length) {
-                Console.cli.println(Localization.lang.t("game.for.usage"), Console.PURPLE);
+                panel.append(Localization.lang.t("game.for.usage"), Colors.PURPLE);
                 return;
             }
 
@@ -196,7 +195,7 @@ public class Executor implements Command {
                 try {
                     nestedTimes = Integer.parseInt(rawTimes.toString());
                 } catch(Exception e) {
-                    Console.cli.error("Invalid number of times: " + tokens[pos + 1]);
+                    panel.append(Localization.lang.t("game.for.invalid_times", tokens[pos + 1]), Colors.BRIGHT_RED);
                     return;
                 }
             }
@@ -210,7 +209,7 @@ public class Executor implements Command {
 
         if(token != null && token.equals("if")) {
             if(pos + 4 >= tokens.length) {
-                Console.cli.println("Usage: if <left> <op> <right> then <command>", Console.PURPLE);
+                panel.append(Localization.lang.t("game.if.usage"), Colors.PURPLE);
                 return;
             }
 
@@ -220,12 +219,12 @@ public class Executor implements Command {
 
             Object result = evaluate(left, op, right);
             if(!(result instanceof Boolean)) {
-                Console.cli.error("Condition must evaluate to boolean");
+                panel.append(Localization.lang.t("game.error.boolean"), Colors.BRIGHT_RED);
                 return;
             }
 
             if(!tokens[pos + 4].equalsIgnoreCase("then")) {
-                Console.cli.println("Usage: if <left> <op> <right> then <command>", Console.PURPLE);
+                panel.append(Localization.lang.t("game.if.usage"), Colors.PURPLE);
                 return;
             }
 
@@ -349,7 +348,7 @@ public class Executor implements Command {
             a = Double.parseDouble(leftValue.toString());
             b = Double.parseDouble(rightValue.toString());
         } catch(NumberFormatException e) {
-            Console.cli.error("Invalid number in expression");
+            panel.append(Localization.lang.t("game.error.number"), Colors.BRIGHT_RED);
             return 0;
         }
 
@@ -390,7 +389,7 @@ public class Executor implements Command {
     public void give(String[] args) {
         if(Gamerule.isEnabled(Gamerule.ENABLE_CHEATS)) {
             if(args.length < 3) {
-                Console.cli.println(Localization.lang.t("game.give.usage"), Console.PURPLE);
+                panel.append(Localization.lang.t("game.give.usage"), Colors.PURPLE);
                 return;
             }
 
@@ -400,7 +399,7 @@ public class Executor implements Command {
             for(int i = 0; i < quantity; i++) {
                 CropID itemCrop;
                 for(CropID c : CropID.values()) {
-                    if(Console.cli.equals(c.getName(), item)) {
+                    if(c.getName().equalsIgnoreCase(item)) {
                         itemCrop = c;
                         player.inventory().add(itemCrop);
                         break;
@@ -411,7 +410,7 @@ public class Executor implements Command {
             for(int i = 0; i < quantity; i++) {
                 Upgrades upgrade;
                 for(Upgrades u : Upgrades.values()) {
-                    if(Console.cli.equals(u.name().toLowerCase(), item)) {
+                    if(u.name().toLowerCase().equalsIgnoreCase(item)) {
                         upgrade = u;
                         player.add(upgrade);
                         break;
@@ -422,7 +421,7 @@ public class Executor implements Command {
             for(int i = 0; i < quantity; i++) {
                 Fertilizer fertilizer;
                 for(Fertilizer f : Fertilizer.values()) {
-                    if(Console.cli.equals("f." + f.name().toLowerCase(), item)) {
+                    if(Boolean.parseBoolean("f." + f.name().toLowerCase().equalsIgnoreCase(item))) {
                         fertilizer = f;
                         player.inventory().add(fertilizer);
                         item = "fertilizer." + f.name().toLowerCase();
@@ -431,16 +430,16 @@ public class Executor implements Command {
                 }
             }
 
-            if(Console.cli.equals(item, "water")) {
+            if(item.equalsIgnoreCase("water")) {
                 player.water(quantity);
             }
 
-            if(Console.cli.equals(item, "gold")) {
+            if(item.equalsIgnoreCase("gold")) {
                 player.earn(quantity);
             }
 
-            Console.cli.println(Localization.lang.t("game.give.success",
-                    item, quantity), Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("game.give.success",
+                    item, quantity), Colors.BRIGHT_GREEN);
 //            forceEnd();
         }
     }
@@ -464,11 +463,10 @@ public class Executor implements Command {
      *                 <li>args[2] must be "="</li>
      *                 <li>args[3] is the value to assign</li>
      *             </ul>
-     * @see Console
      */
     public void var(String[] args) {
         if(args.length < 4 || !args[2].equalsIgnoreCase("=")) {
-            Console.cli.println(Localization.lang.t("game.var.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.var.usage"), Colors.PURPLE);
             return;
         }
 
@@ -503,7 +501,7 @@ public class Executor implements Command {
      */
     public void redo() {
         if(previousArgs == null) {
-            Console.cli.error("No previous command.");
+            panel.append(Localization.lang.t("game.error.prev_command"), Colors.BRIGHT_RED);
             return;
         }
 
@@ -519,7 +517,7 @@ public class Executor implements Command {
      * @return boolean if true command was sleep, false otherwise
      */
     public boolean doSleep() {
-        return Console.cli.equals(lastCommand, "sleep");
+        return lastCommand.equalsIgnoreCase("sleep");
     }
 
     /**

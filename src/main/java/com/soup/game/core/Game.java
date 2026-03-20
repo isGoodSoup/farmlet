@@ -6,16 +6,16 @@ import com.soup.game.cmd.Registry;
 import com.soup.game.ent.Player;
 import com.soup.game.enums.Gamerule;
 import com.soup.game.intf.World;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
 import com.soup.game.service.Stats;
+import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.Barn;
 import com.soup.game.world.Environment;
 import com.soup.game.world.Farm;
 import com.soup.game.world.Market;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * <h1>farmlet</h1>
@@ -92,6 +92,7 @@ import java.util.Locale;
 @SuppressWarnings("all")
 public final class Game {
     private static final float HOURS = 24f;
+    private final SwingPanel panel;
     private final GameLoop gameLoop;
     private final Player player;
     private final Farm farm;
@@ -103,73 +104,46 @@ public final class Game {
     private final Registry registry;
     private final Executor executor;
 
-    /**
-     * Initializes a new Farm game.
-     * Sets up the farm grid, inventory, commands, market,
-     * weather and upgrades. It starts the main game loop.
-     */
-    public Game() {
-        Localization.lang.setLocale(Locale.forLanguageTag("en"));
-        this.player = new Player();
-        this.env = new Environment();
-        this.farm = new Farm(player, env);
-        this.barn = new Barn(player);
-        this.market = new Market(player);
+    public Game(SwingPanel panel) {
+        this.panel = panel;
+        this.player = new Player(this.panel);
+        this.env = new Environment(this.panel);
+        this.farm = new Farm(this.panel, player, env);
+        this.barn = new Barn(this.panel, player);
+        this.market = new Market(this.panel, player);
 
         this.parser = new Parser();
         this.registry = new Registry();
-        this.executor = new Executor(player, parser, registry);
-        this.gameLoop = new GameLoop(farm, barn, env, executor);
+        this.executor = new Executor(this.panel, player, parser, registry);
+        this.gameLoop = new GameLoop(this.panel, farm, barn, env, executor);
         addCommands();
+        panel.setCommandListener(command -> executor.run(command));
         intro();
-        start();
     }
 
     /**
-     * The main method, to start the game
-     * @param args
-     */
-    public static void main(String[] args) {
-        new Game();
-    }
-
-    /**
-     * Displays the game introduction text in the console using a typewriter effect.
+     * Displays the game introduction text in the UI panel using a typewriter-style effect.
      * <p>
      * The text is retrieved from the localization system via
-     * {@code Localization.lang.t("game.intro")}. Characters are printed in small
-     * batches (default batch size: 2) with a short delay (30ms) between each batch
-     * to simulate typing. After the intro finishes, a welcome message personalized
-     * with the player's title is displayed in bright green.
+     * {@code Localization.lang.t("game.intro")} according to the current language
+     * setting (e.g., English, Spanish).
      * </p>
      * <p>
-     * This method blocks the calling thread while printing the text and handles
-     * {@link InterruptedException} by rethrowing it as a {@link RuntimeException}.
+     * The introduction is appended to the {@code panel} component in {@link Colors#BRIGHT_BLUE}
+     * to give it a distinctive visual style. This method delegates the actual rendering
+     * and typewriter effect to the panel's {@code append} method.
      * </p>
      * <p>
-     * Console text colors:
-     * <ul>
-     *     <li>Intro text: {@link Console#BLUE}</li>
-     *     <li>Welcome message: {@link Console#BRIGHT_GREEN}</li>
-     * </ul>
+     * Typically called once at the start of the game to set the tone and provide
+     * narrative context for the player.
      * </p>
      */
     private void intro() {
         String intro = Localization.lang.t("game.intro");
-        int batchSize = 2;
-        for (int i = 0; i < intro.length(); i += batchSize) {
-            int end = Math.min(i + batchSize, intro.length());
-            String chunk = intro.substring(i, end);
-            Console.cli.print(chunk, Console.BLUE);
-            try {
-                Thread.sleep(30);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        Console.cli.println();
-        Console.cli.println(Localization.lang.t("game.welcome", player.title()),
-                Console.BRIGHT_GREEN, true);
+        panel.append(intro + "\n", Colors.BRIGHT_BLUE, 30, () -> {
+            new Thread(this::start).start();
+            panel.focusInput();
+        });
     }
 
     /**
@@ -214,14 +188,14 @@ public final class Game {
      */
     private void showEnding() {
         if(Stats.stat.days > 60) {
-            Console.cli.println(Localization.lang.t("game.end.best", Stats.stat.days),
-                    Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("game.end.best", Stats.stat.days),
+                    Colors.BRIGHT_GREEN);
         } else if(Stats.stat.days >= 15 && Stats.stat.days < 60) {
-            Console.cli.println(Localization.lang.t("game.end.good", Stats.stat.days),
-                    Console.BRIGHT_YELLOW);
+            panel.append(Localization.lang.t("game.end.good", Stats.stat.days),
+                    Colors.BRIGHT_YELLOW);
         } else if(Stats.stat.days < 15) {
-            Console.cli.println(Localization.lang.t("game.end.bad", Stats.stat.days),
-                    Console.PURPLE);
+            panel.append(Localization.lang.t("game.end.bad", Stats.stat.days),
+                    Colors.PURPLE);
         }
     }
 
@@ -255,7 +229,7 @@ public final class Game {
      */
     private void gamerule(String[] args) {
         if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.gamerule.usage"), Console.PURPLE);
+            panel.append(Localization.lang.t("game.gamerule.usage"), Colors.PURPLE);
             return;
         }
 
@@ -264,12 +238,12 @@ public final class Game {
 
         Gamerule rule = Gamerule.fromKey(key);
         if(rule == null) {
-            Console.cli.error(Localization.lang.t("game.gamerule.notfound"));
+            panel.append(Localization.lang.t("game.gamerule.notfound"), Colors.BRIGHT_RED);
             return;
         }
         rule.setValue(value);
-        Console.cli.println(Localization.lang.t("game.gamerule.success",
-                rule.key(), rule.value()), Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("game.gamerule.success",
+                rule.key(), rule.value()), Colors.BRIGHT_GREEN);
     }
 
     /**
@@ -329,7 +303,7 @@ public final class Game {
         registry.register("inv", args -> player.inventory().showInventory(player));
         registry.register("time", args -> Stats.stat.showTime(env));
         registry.register("sell", args -> market.sellCrops());
-        registry.register("buy", args -> market.buy(farm));
+        registry.register("buy", args -> market.buy(farm, choice -> { gameLoop.update(); }));
         registry.register("stats", args -> Stats.stat.showStats(player));
         registry.register("sleep", args -> gameLoop.sleep(player.purse()));
         registry.register("end", args -> {});

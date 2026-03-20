@@ -3,9 +3,10 @@ package com.soup.game.ent;
 import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Upgrades;
 import com.soup.game.intf.Entity;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
+import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.QuestLog;
 
 import java.nio.file.Paths;
@@ -21,6 +22,7 @@ import java.util.List;
  */
 @Entity(type = "player")
 public class Player {
+    private final SwingPanel panel;
     private final String title;
     private final String name;
     private final Inventory inventory;
@@ -36,13 +38,14 @@ public class Player {
      * Constructs a new Player with default values.
      * Initializes the inventory, sets the level to 1, and experience to 0.
      */
-    public Player() {
+    public Player(SwingPanel panel) {
+        this.panel = panel;
         this.name = Paths.get(System.getProperty("user.home"))
                 .getFileName().toString();
         title = Localization.lang.t("game.farm.title", name,
                 Localization.lang.t("game.farm"));
-        this.inventory = new Inventory();
-        this.questLog = new QuestLog();
+        this.inventory = new Inventory(panel);
+        this.questLog = new QuestLog(panel);
         this.upgrades = new ArrayList<>();
         this.level = 1;
         this.experience = 0;
@@ -76,11 +79,11 @@ public class Player {
             levelUp();
             nextLevel = level * 10;
 
-            Console.cli.println(Localization.lang.t("player.levelup", level),
-                    Console.BRIGHT_GREEN);
+            panel.append(Localization.lang.t("player.levelup", level),
+                    Colors.BRIGHT_GREEN);
         }
-        Console.cli.println(Localization.lang.t("player.gainxp", experience,
-                        nextLevel - this.experience), Console.BRIGHT_GREEN);
+        panel.append(Localization.lang.t("player.gainxp", experience,
+                        nextLevel - this.experience), Colors.GREEN);
     }
 
     /**

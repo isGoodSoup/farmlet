@@ -1,7 +1,8 @@
 package com.soup.game.world;
 
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Stats;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +23,14 @@ import java.util.List;
  * }</pre>
  */
 public class QuestLog {
+    private final SwingPanel panel;
     private final List<Quest> quests;
 
     /**
      * Constructs a new, empty {@code QuestLog}.
      */
-    public QuestLog() {
+    public QuestLog(SwingPanel panel) {
+        this.panel = panel;
         this.quests = new ArrayList<>();
     }
 
@@ -59,15 +62,11 @@ public class QuestLog {
     }
 
     /**
-     * Displays all quests in the log to the console.
-     * <p>
-     * Each quest is printed with its name and required count.
-     * Uses {@link Console} with purple color formatting for readability.
-     * </p>
+     * Shows the entire questlog
      */
     public void show() {
-        for (Quest q : quests) {
-            Console.cli.println(q.name() + " " + q.required(), Console.PURPLE);
+        for(Quest q : quests) {
+            panel.append(q.name() + " " + q.required(), Colors.BLUE);
         }
     }
 

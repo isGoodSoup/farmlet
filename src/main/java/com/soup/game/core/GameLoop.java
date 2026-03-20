@@ -3,14 +3,14 @@ package com.soup.game.core;
 import com.soup.game.cmd.Executor;
 import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Hydration;
-import com.soup.game.service.Console;
-import com.soup.game.service.Localization;
-import com.soup.game.service.Pos;
-import com.soup.game.service.Stats;
+import com.soup.game.service.*;
+import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.Barn;
 import com.soup.game.world.Environment;
 import com.soup.game.world.Farm;
 import com.soup.game.world.Tile;
+
+import java.awt.*;
 
 /**
  * <h1>Game Loop</h1>
@@ -49,6 +49,7 @@ public class GameLoop {
     private static final float TIME_INCREMENT = 0.2f;
     private static final float DAY_START_HOUR = 6f;
 
+    private final SwingPanel panel;
     private final Farm farm;
     private final Barn barn;
     private final Environment env;
@@ -58,12 +59,15 @@ public class GameLoop {
 
     /**
      * Creates a new game loop that orchestrates the simulation.
+     * @param panel the rendering layer
      * @param farm the farm managing crops and tiles
      * @param barn the barn managing animals
      * @param env the environment managing weather and seasons
      * @param executor the command executor for player input
      */
-    public GameLoop(Farm farm, Barn barn, Environment env, Executor executor) {
+    public GameLoop(SwingPanel panel, Farm farm, Barn barn,
+                    Environment env, Executor executor) {
+        this.panel = panel;
         this.farm = farm;
         this.barn = barn;
         this.env = env;
@@ -82,25 +86,20 @@ public class GameLoop {
      * </p>
      */
     public void start() {
-        while(!Console.cli.equals(executor.getLastCommand(), "end") && !Stats.stat.isGameOver) {
-            Console.cli.println(day + " " + Stats.stat.days, Console.GREEN);
+        while(!executor.getLastCommand().equals("end") && !Stats.stat.isGameOver) {
+            panel.append(day + " " + Stats.stat.days + "\n", Colors.GREEN);
             env.season();
             env.weather();
             update();
             env.hours(DAY_START_HOUR);
-            do {
-                executor.run();
-                env.advanceTime(TIME_INCREMENT);
 
-                if(env.hours() >= HOURS_PER_DAY || executor.doSleep()) {
-                    env.hours(0f);
-                    Stats.stat.days++;
-                    farm.grow();
-                }
-                barn.update();
-            } while(!executor.doSleep()
-                    && !Console.cli.equals(executor.getLastCommand(), "end")
-                    && !Stats.stat.isGameOver);
+            env.advanceTime(TIME_INCREMENT);
+            if(env.hours() >= HOURS_PER_DAY) {
+                env.hours(0f);
+                Stats.stat.days++;
+                farm.grow();
+            }
+            barn.update();
             farm.reset();
         }
     }
@@ -144,8 +143,8 @@ public class GameLoop {
      */
     public void update(String[] args) {
         if(args.length < 5) {
-            Console.cli.println(Localization.lang.t("game.view.usage"),
-                    Console.PURPLE);
+            panel.append(Localization.lang.t("game.view.usage"),
+                    Colors.PURPLE);
             return;
         }
 
@@ -157,13 +156,13 @@ public class GameLoop {
             endRow = Integer.parseInt(args[3]);
             endCol = Integer.parseInt(args[4]);
         } catch(NumberFormatException e) {
-            Console.cli.error(Localization.lang.t("game.coordinates.invalid"));
+            panel.append(Localization.lang.t("game.coordinates.invalid"), Colors.BRIGHT_RED);
             return;
         }
 
         if(startRow < 0 || startRow >= farm.tiles().size()
                 || startCol < 0 || startCol >= farm.tiles().size()) {
-            Console.cli.error(Localization.lang.t("game.coordinates.out_of_bounds"));
+            panel.append(Localization.lang.t("game.coordinates.out_of_bounds"), Colors.BRIGHT_RED);
             return;
         }
 
@@ -181,23 +180,22 @@ public class GameLoop {
                     sb.append("[ ]");
                 } else if(tile.crop().getHydration() == Hydration.NONE) {
                     tile.crop().wither();
-                    sb.append(Console.RED).append("[X]").append(Console.RESET);
+                    sb.append(Colors.RED).append("[X]");
                 } else {
-                    String stageColor = "foo2";
+                    Color stageColor = null;
                     switch(tile.crop().getStage()) {
-                        case SEED, BUD -> stageColor = Console.PURPLE;
-                        case GROWING -> stageColor = Console.BLUE;
-                        case MATURE -> stageColor = Console.CYAN;
-                        case HARVESTABLE -> stageColor = Console.BRIGHT_GREEN;
+                        case SEED, BUD -> stageColor = Colors.PURPLE;
+                        case GROWING -> stageColor = Colors.BLUE;
+                        case MATURE -> stageColor = Colors.CYAN;
+                        case HARVESTABLE -> stageColor = Colors.BRIGHT_GREEN;
                     }
                     sb.append(stageColor).append("[")
-                            .append(tile.crop().getChar()).append("]")
-                            .append(Console.RESET);
+                            .append(tile.crop().getChar()).append("]");
                 }
             }
             sb.append("\n");
         }
-        Console.cli.print(sb.toString());
+        panel.append(sb.toString(), Colors.BRIGHT_WHITE);
     }
 
     /**
@@ -218,8 +216,8 @@ public class GameLoop {
         }
 
         float average = cropCount > 0 ? (float) totalHydration/cropCount : 0f;
-        Console.cli.println(Localization.lang.t("game.irrigate_crops", average),
-                Console.CYAN);
+        panel.append(Localization.lang.t("game.irrigate_crops", average),
+                Colors.CYAN);
     }
 
     /**
@@ -229,9 +227,9 @@ public class GameLoop {
      */
     public void sleep(int playerCoins) {
         env.hours(HOURS_PER_DAY);
-        Console.cli.println(Localization.lang.t("game.sleep"), Console.CYAN);
-        Console.cli.println(Localization.lang.t("game.coin", playerCoins),
-                Console.YELLOW);
+        panel.append(Localization.lang.t("game.sleep"), Colors.CYAN);
+        panel.append(Localization.lang.t("game.coin", playerCoins),
+                Colors.YELLOW);
         updateHydration();
     }
 
@@ -248,8 +246,8 @@ public class GameLoop {
     public void forceEnd(String playerName) {
         if(Gamerule.isEnabled(Gamerule.ENABLE_PUNISHMENT)) {
             Stats.stat.isGameOver = true;
-            Console.cli.println(Localization.lang.t("game.end.worst", playerName),
-                    Console.BRIGHT_RED);
+            panel.append(Localization.lang.t("game.end.worst", playerName),
+                    Colors.BRIGHT_RED);
         }
     }
 }

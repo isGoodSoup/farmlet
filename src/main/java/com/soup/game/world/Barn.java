@@ -6,8 +6,9 @@ import com.soup.game.ent.barn.*;
 import com.soup.game.enums.AnimalType;
 import com.soup.game.enums.Gamerule;
 import com.soup.game.intf.World;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.*;
 
@@ -60,6 +61,7 @@ import java.util.*;
  */
 @World(entity = "barn")
 public class Barn {
+    private final SwingPanel panel;
     private final List<Animal> animals;
     private final Player player;
 
@@ -85,10 +87,13 @@ public class Barn {
      *     <li>Animals are shuffled after creation to avoid predictable ordering</li>
      *     <li>Subclasses of {@link Animal} are instantiated according to their type</li>
      * </ul>
+     *
+     * @param panel render layer
      * @param player player who will save items to inventory
      * @see #populate()
      */
-    public Barn(Player player) {
+    public Barn(SwingPanel panel, Player player) {
+        this.panel = panel;
         this.animals = new ArrayList<>();
         this.player = player;
         populate();
@@ -278,8 +283,8 @@ public class Barn {
         for(Animal a : animals) {
             if(a instanceof Dog dog) {
                 dog.happy(25);
-                Console.cli.println(Localization.lang.t(
-                        "animal.dog.pet", dog.getName()));
+                panel.append(Localization.lang.t(
+                        "animal.dog.pet", dog.getName()), Colors.BLUE);
             }
         }
     }

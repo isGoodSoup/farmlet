@@ -4,6 +4,7 @@ import com.soup.game.cmd.Registry;
 import com.soup.game.ent.Player;
 import com.soup.game.intf.Item;
 import com.soup.game.intf.Service;
+import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.Environment;
 
 import java.util.Map;
@@ -41,13 +42,18 @@ import java.util.Map;
 @Service
 public class Stats {
     /** Singleton instance of Stats */
-    public static final Stats stat = new Stats();
+    private static SwingPanel panel;
+    public static final Stats stat = new Stats(panel);
     public int days = 0;
     public int totalWater = 0;
     public int totalCmd = 0;
     public int totalCrops = 0;
     public int totalQuests = 0;
     public boolean isGameOver = false;
+
+    public Stats(SwingPanel panel) {
+        this.panel = panel;
+    }
 
     /**
      * Displays the current game statistics to the console.
@@ -73,8 +79,7 @@ public class Stats {
      * </p>
      */
     public void showStats(Player player) {
-        Console.cli.println();
-        StringBuilder sb = new StringBuilder(Localization.lang.t("game.stats"));
+        StringBuilder sb = new StringBuilder(Localization.lang.t("\n" + "game.stats"));
         if(isGameOver) {
             sb.append(", Worst Ending");
         } else if(days > 60) {
@@ -85,18 +90,18 @@ public class Stats {
             sb.append(", Bad Ending");
         } else {}
 
-        Console.cli.println(sb.toString(), Console.PURPLE);
+        panel.append(sb.toString(), Colors.PURPLE);
         for(Map.Entry<Item, Integer> entries : player.inventory().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
 
-        Console.cli.println(Localization.lang.t("game.stats.cmd_ran", totalCmd), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.crops", totalCrops), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.days", days), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.waterUsed", totalWater), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.quests", totalQuests), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.level", player.level()), Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.stats.coin", player.purse()), Console.PURPLE);
+        panel.append(Localization.lang.t("game.stats.cmd_ran", totalCmd), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.crops", totalCrops), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.days", days), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.waterUsed", totalWater), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.quests", totalQuests), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.level", player.level()), Colors.PURPLE);
+        panel.append(Localization.lang.t("game.stats.coin", player.purse()), Colors.PURPLE);
     }
 
     /**
@@ -111,8 +116,8 @@ public class Stats {
     public void showTime(Environment env) {
         int hour = (int) env.hours();
         int minute = (int) ((env.hours() - hour) * 60);
-        Console.cli.println(Localization.lang.t("game.day") + " " +
-                        days + " - " + String.format("%02d:%02d", hour, minute),Console.CYAN);
+        panel.append(Localization.lang.t("game.day") + " " +
+                        days + " - " + String.format("%02d:%02d", hour, minute),Colors.CYAN);
     }
 
     /**
@@ -124,7 +129,7 @@ public class Stats {
      */
     public void showHelp(Registry registry) {
         for(String cmd : registry.getCommandNames()) {
-            Console.cli.println(" - " + cmd, Console.CYAN);
+            panel.append(" - " + cmd, Colors.CYAN);
         }
     }
 }

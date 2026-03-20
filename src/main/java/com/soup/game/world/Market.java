@@ -7,13 +7,15 @@ import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Upgrades;
 import com.soup.game.intf.Item;
 import com.soup.game.intf.World;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * <h1>Market</h1>
@@ -38,14 +40,18 @@ import java.util.Map;
  */
 @World
 public class Market {
+    private final SwingPanel panel;
     private final Map<Integer, String> market;
     private final Player player;
 
     /**
      * Constructs a new Market instance for the specified player.
+     *
+     * @param panel  render layer
      * @param player the player who will interact with this market
      */
-    public Market(Player player) {
+    public Market(SwingPanel panel, Player player) {
+        this.panel = panel;
         this.market = new LinkedHashMap<>();
         this.player = player;
     }
@@ -64,19 +70,19 @@ public class Market {
     public void sellCrops() {
         int totalCoin = 0;
 
-        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.inventory()
+        for (Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.inventory()
                 .getAll()).entrySet()) {
             Item item = entry.getKey();
             if(item instanceof CropID c) {
                 int quantity = entry.getValue();
                 totalCoin += c.value() * quantity;
-                for(int i = 0; i < quantity; i++) {
+                for (int i = 0; i < quantity; i++) {
                     player.inventory().remove(c);
                 }
             }
         }
         player.earn(totalCoin);
-        Console.cli.println(Localization.lang.t("game.sold", totalCoin), Console.YELLOW);
+        panel.append(Localization.lang.t("game.sold", totalCoin), Colors.YELLOW);
     }
 
     /**
@@ -113,99 +119,85 @@ public class Market {
      *
      * @param farm the {@link Farm} instance that may be expanded when purchasing plots
      */
-    public void buy(Farm farm) {
-        if(!Gamerule.isEnabled(Gamerule.ENABLE_MARKET)) { return; }
+    public void buy(Farm farm, Consumer<Integer> onComplete) {
+        if(!Gamerule.isEnabled(Gamerule.ENABLE_MARKET)) {
+            return;
+        }
         market.clear();
         market.put(100, Localization.lang.t("market.water"));
         market.put(200, Localization.lang.t("market.fertilizer"));
         market.put(500, Localization.lang.t("market.for"));
-        market.put(8_192, Localization.lang.t("market.plot"));
-        market.put(12_288, Localization.lang.t("market.upgrades"));
-        boolean isBuying = true;
-        do {
-            int r = Integer.MAX_VALUE;
-            int maxPriceWidth = market.keySet()
-                    .stream()
-                    .map(k -> k.toString().length())
-                    .max(Integer::compare)
-                    .orElse(0);
+        market.put(8192, Localization.lang.t("market.plot"));
+        market.put(12288, Localization.lang.t("market.upgrades"));
 
-            for(Map.Entry<Integer, String> entry : market.entrySet()) {
-                String price = entry.getKey().toString();
-                String name = entry.getValue();
-                String spaces = " ".repeat(maxPriceWidth - price.length() + 2);
-                Console.cli.println(price + " gold" + spaces + name, Console.PURPLE);
+        int maxPriceWidth = market.keySet().stream()
+                .map(k -> k.toString().length())
+                .max(Integer::compare).orElse(0);
+
+        List<Map.Entry<Integer, String>> items = new ArrayList<>(market.entrySet());
+        for (int i = 0; i < items.size(); i++) {
+            Map.Entry<Integer, String> entry = items.get(i);
+            String spaces = " ".repeat(maxPriceWidth - entry.getKey().toString().length() + 2);
+            panel.append((i + 1) + ". " + entry.getKey() + " gold" + spaces + entry.getValue() + "\n", Colors.PURPLE);
+        }
+
+        panel.setCommandListener(line -> {
+            try {
+                int choice = Integer.parseInt(line.trim());
+                if(choice < 1 || choice > items.size()) {
+                    panel.append(Localization.lang.t("game.error.selection") + "\n", Colors.BRIGHT_RED);
+                    return;
+                }
+                purchase(farm, choice);
+                if(onComplete != null) {
+                    onComplete.accept(choice);
+                }
+            } catch (NumberFormatException e) {
+                panel.append(Localization.lang.t("game.error.number") + "\n", Colors.BRIGHT_RED);
             }
+        });
+    }
 
-            while(r > market.size()) {
-                r = Console.cli.replyNum(Localization.lang.t("market.query") + " ");
+    private void purchase(Farm farm, int r) {
+        Map.Entry<Integer, String> selected = new ArrayList<>(market.entrySet()).get(r - 1);
+        int cost = selected.getKey();
+        String item = selected.getValue();
+
+        if(player.purse() < cost) {
+            panel.append(Localization.lang.t("market.funds"), Colors.BRIGHT_RED);
+            return;
+        }
+
+        switch (r) {
+            case 1 -> {
+                player.take(cost);
+                player.water(1f);
+                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
             }
-
-            List<Map.Entry<Integer, String>> items = new ArrayList<>(market.entrySet());
-            Map.Entry<Integer, String> selected = items.get(r - 1);
-
-            int cost = selected.getKey();
-            String item = selected.getValue();
-
-            switch(r) {
-                case 1 -> {
-                    if(player.purse() < cost) {
-                        Console.cli.error(Localization.lang.t("market.funds"));
-                        return;
-                    }
-
-                    player.take(cost);
-                    player.water(1f);
-                    Console.cli.println(Localization.lang.t("market.bought",
-                            item, player.purse()), Console.BRIGHT_GREEN);
+            case 2 -> {
+                player.take(cost);
+                for (int i = 0; i < 16; i++) {
+                    player.inventory().add(Fertilizer.SPEED);
+                    player.inventory().add(Fertilizer.YIELD);
                 }
-                case 2 -> {
-                    if(player.purse() < cost) {
-                        Console.cli.error(Localization.lang.t("market.funds"));
-                        return;
-                    }
-
-                    player.take(cost);
-                    for(int i = 0; i < 16; i++) {
-                        player.inventory().add(Fertilizer.SPEED);
-                        player.inventory().add(Fertilizer.YIELD);
-                    }
-                    Console.cli.println(Localization.lang.t("market.bought",
-                            item, player.purse()), Console.BRIGHT_GREEN);
-                }
-                case 3 -> {
-                    if(player.purse() < cost) {
-                        Console.cli.error(Localization.lang.t("market.funds"));
-                        return;
-                    }
-
-                    player.take(cost);
-                    player.add(Upgrades.FOR_LOOP);
-                    Console.cli.println(Localization.lang.t("market.bought",
-                            item, player.purse()), Console.BRIGHT_GREEN);
-                }
-                case 4 -> {
-                    int increase = 2;
-                    if(player.purse() < cost) {
-                        Console.cli.error(Localization.lang.t("game.plot.fail"));
-                        return;
-                    }
-
-                    int oldSize = farm.tiles().size();
-                    player.take(cost);
-                    farm.populate(farm.tiles().size() + increase);
-                    Console.cli.println(Localization.lang.t("market.bought.plot",
-                            farm.tiles().size(), player.purse()), Console.BRIGHT_GREEN);
-                }
-                case 5 -> {
-                    player.take(cost);
-                    player.add(Upgrades.HARVEST_UPGRADE);
-                    player.add(Upgrades.PLANT_UPGRADE);
-                    Console.cli.println(Localization.lang.t("market.bought",
-                            item, player.purse()), Console.BRIGHT_GREEN);
-                }
-                default -> isBuying = false;
+                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
             }
-        } while(player.purse() > 0 || isBuying);
+            case 3 -> {
+                player.take(cost);
+                player.add(Upgrades.FOR_LOOP);
+                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+            }
+            case 4 -> {
+                player.take(cost);
+                farm.populate(farm.tiles().size() + 2);
+                panel.append(Localization.lang.t("market.bought.plot", farm.tiles().size(), player.purse()), Colors.BRIGHT_GREEN);
+            }
+            case 5 -> {
+                player.take(cost);
+                player.add(Upgrades.HARVEST_UPGRADE);
+                player.add(Upgrades.PLANT_UPGRADE);
+                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+            }
+        }
     }
 }

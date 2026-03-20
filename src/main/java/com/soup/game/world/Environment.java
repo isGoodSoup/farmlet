@@ -4,29 +4,53 @@ import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Seasons;
 import com.soup.game.enums.Weather;
 import com.soup.game.intf.World;
-import com.soup.game.service.Console;
+import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
 import com.soup.game.service.Stats;
+import com.soup.game.swing.SwingPanel;
 
 import java.util.Objects;
 
 /**
  * <h1>Environment</h1>
- * Represents the game's environmental state, including season, weather,
- * day tracking, and the time of day.
+ * Represents the in-game environmental conditions, including seasons, weather,
+ * daily time progression, and consecutive dry days.
  * <p>
- * The {@code Environment} class manages seasonal changes, weather cycles,
- * and tracks dry days. It interacts with {@link Stats} to update the day
- * count and with {@link Console} for logging environmental messages.
+ * The {@code Environment} class manages:
+ * <ul>
+ *     <li>Current season and seasonal changes every 30 days</li>
+ *     <li>Randomized daily weather events (sunny, rainy, dry, etc.)</li>
+ *     <li>Tracking consecutive dry days for crop management</li>
+ *     <li>Hour-based time progression within a single day</li>
+ * </ul>
+ * </p>
+ * <p>
+ * This class interacts with the {@link SwingPanel} to display season and weather messages
+ * to the player, and it respects {@link Gamerule} flags for weather cycling and time stoppage.
  * </p>
  *
- * <p>
- * Seasons affect crop growth and harvesting mechanics, while weather can
- * influence hydration, growth speed, and certain gameplay events.
- * </p>
+ * <h2>Usage Example:</h2>
+ * <pre>{@code
+ * Environment env = new Environment(panel);
+ * env.season();          // Advances the season if a new 30-day cycle starts
+ * env.weather();         // Randomizes today's weather and prints it
+ * env.advanceTime(1.5f); // Advances the day by 1.5 hours
+ * float currentHour = env.hours();
+ * Seasons currentSeason = env.getSeason();
+ * }</pre>
+ *
+ * <h2>Notes:</h2>
+ * <ul>
+ *     <li>Seasons automatically rotate every 30 in-game days.</li>
+ *     <li>Weather changes only occur if {@link Gamerule#ENABLE_WEATHER_CYCLE} and
+ *         {@link Gamerule#ENABLE_STOP_TIME} are disabled.</li>
+ *     <li>Dry day counter increments whenever {@link Weather#DRY} occurs consecutively.</li>
+ *     <li>All messages are appended to the {@link SwingPanel} for display.</li>
+ * </ul>
  */
 @World
 public class Environment {
+    private final SwingPanel panel;
     private Seasons season;
     private Weather weather;
     private int dryDay;
@@ -36,11 +60,12 @@ public class Environment {
      * Initializes the environment with default values:
      * {@link Weather#SUNNY} and {@link Seasons#SPRING}.
      */
-    public Environment() {
+    public Environment(SwingPanel panel) {
         this.weather = Weather.SUNNY;
         this.season = Seasons.SPRING;
         this.dryDay = 0;
         this.hours = 0f;
+        this.panel = panel;
     }
 
     /**
@@ -102,8 +127,8 @@ public class Environment {
         if(Stats.stat.days != 0) {
             if(Stats.stat.days % 30 == 0) {
                 season = season.next();
-                Console.cli.println(Localization.lang.t("game.season.new",
-                        season.getKey()), Console.PURPLE);
+                panel.append(Localization.lang.t("game.season.new",
+                        season.getKey()), Colors.PURPLE);
             }
         }
     }
@@ -125,7 +150,7 @@ public class Environment {
      * </p>
      */
     public void weather() {
-        if (Gamerule.isEnabled(Gamerule.ENABLE_WEATHER_CYCLE)
+        if(Gamerule.isEnabled(Gamerule.ENABLE_WEATHER_CYCLE)
                 || Gamerule.isEnabled(Gamerule.ENABLE_STOP_TIME)) {
             return;
         }
@@ -137,6 +162,6 @@ public class Environment {
             dryDay = 0;
         }
 
-        Console.cli.println(weather.message(), Console.CYAN);
+        panel.append(weather.message(), Colors.CYAN);
     }
 }

@@ -9,6 +9,7 @@ import com.soup.game.service.Localization;
 
 @Entity(type = "animal")
 public class Chicken extends Animal {
+
     public Chicken(String name) {
         super(name, Sex.random(), AnimalType.CHICKEN);
     }
