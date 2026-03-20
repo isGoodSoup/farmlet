@@ -1,6 +1,7 @@
 package com.soup.game.swing;
 
 import com.soup.game.core.Game;
+import com.soup.game.ent.Animal;
 import com.soup.game.service.Localization;
 
 import javax.swing.*;
@@ -57,6 +58,7 @@ public class SwingFrame extends JFrame {
     public SwingFrame() throws HeadlessException {
         super(TITLE);
         this.panel = new SwingPanel(this);
+        Animal.setPanel(panel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
         add(panel);

@@ -123,6 +123,8 @@ public class SwingPanel extends JPanel {
         inputField.setBackground(Color.BLACK);
         inputField.setForeground(Color.WHITE);
         inputField.setCaretColor(Color.WHITE);
+
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         inputField.setBorder(null);
         gameLog.setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
 
@@ -142,7 +144,7 @@ public class SwingPanel extends JPanel {
     }
 
     private void process(String command, Color color) {
-        append("$ " + command, color);
+        append("$ " + command + "\n", color);
     }
 
     /**

@@ -111,7 +111,7 @@ public abstract class Animal {
     private final AnimalType animalType;
     private final List<Product> products;
     private final List<Animal> children;
-    private SwingPanel panel;
+    private static SwingPanel panel;
     private int weight;
     private int height;
     private Enum<?> trait;
@@ -121,21 +121,6 @@ public abstract class Animal {
     private int meals;
     private boolean isAlive;
     private boolean wasFed;
-
-    public Animal(SwingPanel panel, String name, Sex sex, AnimalType animalType) {
-        this.panel = panel;
-        this.name = name;
-        this.animalType = animalType;
-        this.sex = sex;
-        this.products = new ArrayList<>();
-        this.children = new ArrayList<>();
-        this.phase = Phase.NEWBORN;
-        this.happiness = 100;
-        this.hunger = 0;
-        this.meals = 3;
-        this.isAlive = true;
-        this.wasFed = false;
-    }
 
     public Animal(String name, Sex sex, AnimalType animalType) {
         this.name = name;
@@ -149,6 +134,15 @@ public abstract class Animal {
         this.meals = 3;
         this.isAlive = true;
         this.wasFed = false;
+    }
+
+    public static void setPanel(SwingPanel panel) {
+        Animal.panel = panel;
+    }
+
+    public static SwingPanel panel() {
+        if(panel == null) { throw new IllegalStateException("Panel not set"); }
+        return panel;
     }
 
     /**
@@ -226,7 +220,7 @@ public abstract class Animal {
      * @see #canBreedWith(Animal)
      */
     public Animal breed(Animal partner) {
-        if (!canBreedWith(partner)) return null;
+        if(!canBreedWith(partner)) { return null; }
         Class<? extends Animal> cls = (Class<? extends Animal>) this.getClass();
 
         Animal child;
@@ -234,7 +228,7 @@ public abstract class Animal {
             child = cls.getConstructor(String.class)
                     .newInstance(Animal.name());
         } catch (Exception e) {
-            panel.append(e.getMessage(), Colors.BRIGHT_RED);
+            panel().append(e.getMessage(), Colors.BRIGHT_RED);
             return null;
         }
 
@@ -289,12 +283,12 @@ public abstract class Animal {
             }
         }
         if(happiness < 20) {
-            panel.append(Localization.lang.t("animal.unhappy", getName(),
+            panel().append(Localization.lang.t("animal.unhappy", getName(),
                             getLocalizedName()), Colors.BLUE);
         }
 
         if(hunger > 60 || !wasFed || meals >= 2) {
-            panel.append(Localization.lang.t("animal.hungry", getName(),
+            panel().append(Localization.lang.t("animal.hungry", getName(),
                             getLocalizedName()), Colors.BRIGHT_RED);
         }
         sleep();
