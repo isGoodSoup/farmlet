@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
@@ -13,7 +12,8 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.io.InputStream;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * <h1>SwingPanel</h1>
@@ -149,7 +149,7 @@ public class SwingPanel extends JPanel {
      * @param color the echoed command's color
      */
     private void process(String command, Color color) {
-        append("\n" + "$ " + command + "\n", color);
+        append("\n" + "$ " + command, color);
     }
 
     /**
@@ -247,6 +247,14 @@ public class SwingPanel extends JPanel {
      */
     public void focusInput() {
         SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
+    }
+
+    /**
+     * Exposes the {@link CommandListener} to other classes
+     * @return the {{@link #listener}} of the interface
+     */
+    public CommandListener listener() {
+        return listener;
     }
 
     /**
