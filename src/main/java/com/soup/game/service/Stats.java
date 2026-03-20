@@ -42,8 +42,9 @@ import java.util.Map;
 @Service
 public class Stats {
     /** Singleton instance of Stats */
-    private static SwingPanel panel;
-    public static final Stats stat = new Stats(panel);
+    private static Stats instance;
+    private final SwingPanel panel;
+
     public int days = 0;
     public int totalWater = 0;
     public int totalCmd = 0;
@@ -53,6 +54,15 @@ public class Stats {
 
     public Stats(SwingPanel panel) {
         this.panel = panel;
+    }
+
+    public static void init(SwingPanel panel) {
+        if (instance == null) instance = new Stats(panel);
+    }
+
+    public static Stats stat() {
+        if (instance == null) throw new IllegalStateException("Stats not initialized");
+        return instance;
     }
 
     /**
@@ -79,7 +89,7 @@ public class Stats {
      * </p>
      */
     public void showStats(Player player) {
-        StringBuilder sb = new StringBuilder(Localization.lang.t("\n" + "game.stats"));
+        StringBuilder sb = new StringBuilder("\n"+ Localization.lang.t("game.stats"));
         if(isGameOver) {
             sb.append(", Worst Ending");
         } else if(days > 60) {
@@ -90,18 +100,18 @@ public class Stats {
             sb.append(", Bad Ending");
         } else {}
 
-        panel.append(sb.toString(), Colors.PURPLE);
+        panel.append(sb.toString(), Colors.BRIGHT_PURPLE);
         for(Map.Entry<Item, Integer> entries : player.inventory().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
 
-        panel.append(Localization.lang.t("game.stats.cmd_ran", totalCmd), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.crops", totalCrops), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.days", days), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.waterUsed", totalWater), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.quests", totalQuests), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.level", player.level()), Colors.PURPLE);
-        panel.append(Localization.lang.t("game.stats.coin", player.purse()), Colors.PURPLE);
+        panel.append("\n" + Localization.lang.t("game.stats.cmd_ran", totalCmd), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.crops", totalCrops), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.days", days), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.waterUsed", totalWater), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.quests", totalQuests), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.level", player.level()), Colors.BRIGHT_MAGENTA);
+        panel.append("\n" + Localization.lang.t("game.stats.coin", player.purse()), Colors.BRIGHT_MAGENTA);
     }
 
     /**
@@ -117,7 +127,7 @@ public class Stats {
         int hour = (int) env.hours();
         int minute = (int) ((env.hours() - hour) * 60);
         panel.append(Localization.lang.t("game.day") + " " +
-                        days + " - " + String.format("%02d:%02d", hour, minute),Colors.CYAN);
+                        days + " - " + String.format("%02d:%02d", hour, minute),Colors.BRIGHT_BLUE);
     }
 
     /**
@@ -129,7 +139,7 @@ public class Stats {
      */
     public void showHelp(Registry registry) {
         for(String cmd : registry.getCommandNames()) {
-            panel.append(" - " + cmd, Colors.CYAN);
+            panel.append(" - " + cmd, Colors.BLUE);
         }
     }
 }

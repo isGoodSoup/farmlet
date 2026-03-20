@@ -1,9 +1,11 @@
 package com.soup.game.core;
 
 import com.soup.game.cmd.Executor;
-import com.soup.game.enums.Gamerule;
 import com.soup.game.enums.Hydration;
-import com.soup.game.service.*;
+import com.soup.game.service.Colors;
+import com.soup.game.service.Localization;
+import com.soup.game.service.Pos;
+import com.soup.game.service.Stats;
 import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.Barn;
 import com.soup.game.world.Environment;
@@ -49,12 +51,12 @@ public class GameLoop {
     private static final float TIME_INCREMENT = 0.2f;
     private static final float DAY_START_HOUR = 6f;
 
+    private final Game game;
     private final SwingPanel panel;
     private final Farm farm;
     private final Barn barn;
     private final Environment env;
     private final Executor executor;
-    private final String day;
     private String lastCommand;
 
     /**
@@ -65,14 +67,15 @@ public class GameLoop {
      * @param env the environment managing weather and seasons
      * @param executor the command executor for player input
      */
-    public GameLoop(SwingPanel panel, Farm farm, Barn barn,
+    public GameLoop(Game game, SwingPanel panel, Farm farm, Barn barn,
                     Environment env, Executor executor) {
+        this.game = game;
         this.panel = panel;
         this.farm = farm;
         this.barn = barn;
         this.env = env;
         this.executor = executor;
-        this.day = Localization.lang.t("game.day");
+        panel.setCommandListener(this::onCommand);
     }
 
     /**
@@ -86,22 +89,41 @@ public class GameLoop {
      * </p>
      */
     public void start() {
-        while(!executor.getLastCommand().equals("end") && !Stats.stat.isGameOver) {
-            panel.append(day + " " + Stats.stat.days + "\n", Colors.GREEN);
+        panel.append("\n" + Localization.lang.t("game.day") + " " +
+                Stats.stat().days + "\n", Colors.GREEN);
+        env.season();
+        env.weather();
+        env.hours(DAY_START_HOUR);
+        update();
+    }
+
+    private void onCommand(String command) {
+        if(Stats.stat().isGameOver) {
+            panel.append(Localization.lang.t("game.end.worst"), Colors.MAGENTA);
+            return;
+        }
+        executor.run(command);
+        env.advanceTime(TIME_INCREMENT);
+
+        if(env.hours() >= HOURS_PER_DAY) {
+            env.hours(0f);
+            Stats.stat().days++;
+            farm.grow();
+            panel.append(Localization.lang.t("game.day") + " "
+                    + Stats.stat().days + "\n", Colors.GREEN);
             env.season();
             env.weather();
-            update();
-            env.hours(DAY_START_HOUR);
-
-            env.advanceTime(TIME_INCREMENT);
-            if(env.hours() >= HOURS_PER_DAY) {
-                env.hours(0f);
-                Stats.stat.days++;
-                farm.grow();
-            }
-            barn.update();
-            farm.reset();
         }
+
+        barn.update();
+        update();
+
+        if(command.equalsIgnoreCase("end")) {
+            Stats.stat().isGameOver = true;
+            game.showEnding();
+            return;
+        }
+        farm.reset();
     }
 
     /**
@@ -171,6 +193,7 @@ public class GameLoop {
         for(int col = startCol; col < endCol; col++) {
             sb.append(String.format("%-3d", col));
         }
+        Color color = null;
         sb.append("\n");
         for(int row = startRow; row < endRow; row++) {
             sb.append(String.format("%-3d", row));
@@ -180,22 +203,22 @@ public class GameLoop {
                     sb.append("[ ]");
                 } else if(tile.crop().getHydration() == Hydration.NONE) {
                     tile.crop().wither();
-                    sb.append(Colors.RED).append("[X]");
+                    sb.append("[X]");
                 } else {
-                    Color stageColor = null;
                     switch(tile.crop().getStage()) {
-                        case SEED, BUD -> stageColor = Colors.PURPLE;
-                        case GROWING -> stageColor = Colors.BLUE;
-                        case MATURE -> stageColor = Colors.CYAN;
-                        case HARVESTABLE -> stageColor = Colors.BRIGHT_GREEN;
+                        case SEED -> color = Colors.BRIGHT_BLUE;
+                        case BUD -> color = Colors.YELLOW;
+                        case GROWING -> color = Colors.BRIGHT_YELLOW;
+                        case MATURE -> color = Colors.GREEN;
+                        case HARVESTABLE -> color = Colors.BRIGHT_GREEN;
                     }
-                    sb.append(stageColor).append("[")
+                    sb.append("[")
                             .append(tile.crop().getChar()).append("]");
                 }
             }
             sb.append("\n");
         }
-        panel.append(sb.toString(), Colors.BRIGHT_WHITE);
+        panel.append(sb.toString(), color);
     }
 
     /**
@@ -231,23 +254,5 @@ public class GameLoop {
         panel.append(Localization.lang.t("game.coin", playerCoins),
                 Colors.YELLOW);
         updateHydration();
-    }
-
-    /**
-     * Immediately ends the game and displays the apocalypse ending.
-     * <p>
-     * This method sets the internal game over flag to true and prints
-     * a message indicating that the player's farm has failed due to
-     * an in-game catastrophe.
-     * </p>
-     *
-     * @param playerName the name of the player for the ending message
-     */
-    public void forceEnd(String playerName) {
-        if(Gamerule.isEnabled(Gamerule.ENABLE_PUNISHMENT)) {
-            Stats.stat.isGameOver = true;
-            panel.append(Localization.lang.t("game.end.worst", playerName),
-                    Colors.BRIGHT_RED);
-        }
     }
 }

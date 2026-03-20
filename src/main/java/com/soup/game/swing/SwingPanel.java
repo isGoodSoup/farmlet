@@ -103,11 +103,11 @@ public class SwingPanel extends JPanel {
 
         try {
             InputStream is = getClass().getResourceAsStream("/fonts/JetBrainsMonoSemiBold.ttf");
-            font = Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(16f);
+            font = Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(20f);
             gameLog.setFont(font);
         } catch (Exception e) {
             log.error("{}", e.getMessage());
-            gameLog.setFont(new Font("Monospaced", Font.PLAIN, 16));
+            gameLog.setFont(new Font("Monospaced", Font.PLAIN, 20));
         }
 
         final int PADDING = 32;
@@ -209,8 +209,12 @@ public class SwingPanel extends JPanel {
         StyledDocument doc = gameLog.getStyledDocument();
         final int[] index = {0};
 
-        Style style = gameLog.addStyle("textStyle", null);
-        StyleConstants.setForeground(style, color);
+        Style style = gameLog.addStyle("textStyle_" + System.nanoTime(), null);
+        if (color != null) {
+            StyleConstants.setForeground(style, color);
+        } else {
+            StyleConstants.setForeground(style, Color.WHITE);
+        }
 
         Timer timer = new Timer(delay, null);
         timer.addActionListener(e -> {

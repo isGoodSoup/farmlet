@@ -76,6 +76,6 @@ public class QuestLog {
      */
     public void remove(Quest q) {
         quests.remove(q);
-        Stats.stat.totalQuests++;
+        Stats.stat().totalQuests++;
     }
 }

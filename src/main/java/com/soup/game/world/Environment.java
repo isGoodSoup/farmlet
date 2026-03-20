@@ -124,8 +124,8 @@ public class Environment {
      * </p>
      */
     public void season() {
-        if(Stats.stat.days != 0) {
-            if(Stats.stat.days % 30 == 0) {
+        if(Stats.stat().days != 0) {
+            if(Stats.stat().days % 30 == 0) {
                 season = season.next();
                 panel.append(Localization.lang.t("game.season.new",
                         season.getKey()), Colors.PURPLE);

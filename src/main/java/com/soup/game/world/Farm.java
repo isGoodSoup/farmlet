@@ -73,7 +73,7 @@ public class Farm {
     private final List<List<Tile>> tiles;
     private final Player player;
     private final Environment env;
-    private final int SIZE = 4;
+    private final int SIZE = 2;
     private List<Pos> positions;
 
     /**
@@ -688,7 +688,7 @@ public class Farm {
                 tile.crop().water(Hydration.HIGH);
             }
             player.water(-0.1f);
-            Stats.stat.totalWater += 0.1f;
+            Stats.stat().totalWater += 0.1f;
             panel.append(Localization.lang.t("game.irrigate.success", player.can()),
                     Colors.BRIGHT_GREEN);
         } else {

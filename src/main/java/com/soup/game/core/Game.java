@@ -115,7 +115,8 @@ public final class Game {
         this.parser = new Parser();
         this.registry = new Registry();
         this.executor = new Executor(this.panel, player, parser, registry);
-        this.gameLoop = new GameLoop(this.panel, farm, barn, env, executor);
+        this.gameLoop = new GameLoop(this, panel, farm, barn, env, executor);
+        Stats.init(panel);
         addCommands();
         panel.setCommandListener(command -> executor.run(command));
         intro();
@@ -171,8 +172,6 @@ public final class Game {
      */
     private void start() {
         gameLoop.start();
-        showEnding();
-        Stats.stat.showStats(player);
     }
 
     /**
@@ -186,17 +185,19 @@ public final class Game {
      * </ul>
      * </p>
      */
-    private void showEnding() {
-        if(Stats.stat.days > 60) {
-            panel.append(Localization.lang.t("game.end.best", Stats.stat.days),
+    public void showEnding() {
+        if(Stats.stat().days == 0) { return; }
+        if(Stats.stat().days > 60) {
+            panel.append("\n" + Localization.lang.t("game.end.best", Stats.stat().days),
                     Colors.BRIGHT_GREEN);
-        } else if(Stats.stat.days >= 15 && Stats.stat.days < 60) {
-            panel.append(Localization.lang.t("game.end.good", Stats.stat.days),
+        } else if(Stats.stat().days >= 15 && Stats.stat().days < 60) {
+            panel.append("\n" + Localization.lang.t("game.end.good", Stats.stat().days),
                     Colors.BRIGHT_YELLOW);
-        } else if(Stats.stat.days < 15) {
-            panel.append(Localization.lang.t("game.end.bad", Stats.stat.days),
-                    Colors.PURPLE);
+        } else if(Stats.stat().days < 15) {
+            panel.append("\n" + Localization.lang.t("game.end.bad", Stats.stat().days),
+                    Colors.BRIGHT_PURPLE);
         }
+        Stats.stat().showStats(player);
     }
 
     /**
@@ -285,7 +286,7 @@ public final class Game {
      * </p>
      */
     public void addCommands() {
-        registry.register("?", args -> Stats.stat.showHelp(registry));
+        registry.register("?", args -> Stats.stat().showHelp(registry));
         registry.register(".", args -> executor.redo());
         registry.register("give", executor::give);
         registry.register("gamerule", this::gamerule);
@@ -301,10 +302,10 @@ public final class Game {
         registry.register("view", gameLoop::update);
         registry.register("show", args -> gameLoop.update());
         registry.register("inv", args -> player.inventory().showInventory(player));
-        registry.register("time", args -> Stats.stat.showTime(env));
+        registry.register("time", args -> Stats.stat().showTime(env));
         registry.register("sell", args -> market.sellCrops());
         registry.register("buy", args -> market.buy(farm, choice -> { gameLoop.update(); }));
-        registry.register("stats", args -> Stats.stat.showStats(player));
+        registry.register("stats", args -> Stats.stat().showStats(player));
         registry.register("sleep", args -> gameLoop.sleep(player.purse()));
         registry.register("end", args -> {});
     }
