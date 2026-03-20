@@ -1,9 +1,7 @@
 package com.soup.game.core;
 
 import com.soup.game.cmd.Executor;
-import com.soup.game.ent.NPC;
 import com.soup.game.enums.Hydration;
-import com.soup.game.enums.QuestType;
 import com.soup.game.intf.CommandListener;
 import com.soup.game.service.*;
 import com.soup.game.swing.SwingPanel;
@@ -133,14 +131,6 @@ public class GameLoop implements CommandListener {
      */
     private void game(String command) {
         executor.run(command);
-        if(Math.random() > 0.8) {
-            NPC npc = NPCFactory.factory.query();
-            QuestType type = QuestType.getRandomQuest();
-            questLog.add(new Quest(System.currentTimeMillis(), npc, type, (int) (Math.random() * 100),
-                    (int) (Math.random() * 10), ItemFactory.getItem(), random.nextBoolean()));
-            panel.append(Localization.lang.t("game.quest.new", npc.name(), type.name()), Colors.BRIGHT_CYAN);
-        }
-
         env.advanceTime(TIME_INCREMENT);
         if (env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);
