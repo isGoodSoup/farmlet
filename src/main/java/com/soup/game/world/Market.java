@@ -200,7 +200,7 @@ public class Market {
             }
             case 4 -> {
                 player.take(cost);
-                farm.populate(farm.tiles().size() + 2);
+                farm.populate(farm.tiles().size() + 1);
                 panel.append(Localization.lang.t("market.bought.plot", farm.tiles().size(), player.purse()), Colors.BRIGHT_GREEN);
             }
             case 5 -> {
