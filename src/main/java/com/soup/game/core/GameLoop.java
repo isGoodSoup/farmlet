@@ -1,8 +1,11 @@
 package com.soup.game.core;
 
 import com.soup.game.cmd.Executor;
+import com.soup.game.ent.NPC;
 import com.soup.game.enums.Hydration;
+import com.soup.game.enums.QuestType;
 import com.soup.game.intf.CommandListener;
+import com.soup.game.intf.Item;
 import com.soup.game.service.*;
 import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.*;
@@ -137,6 +140,13 @@ public class GameLoop implements CommandListener {
         if(!command.isEmpty()) {
             log.debug("Command executed: {}", command);
         }
+
+        Quest quest;
+        if(Math.random() > 0.85 && questLog.isEmpty()) {
+            quest = createQuest();
+            questLog.add(quest);
+        }
+
         env.advanceTime(TIME_INCREMENT);
         if(env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);
@@ -250,6 +260,16 @@ public class GameLoop implements CommandListener {
             sb.append("\n");
         }
         panel.append(sb.toString(), color);
+    }
+
+    private Quest createQuest() {
+        long id = System.currentTimeMillis();
+        NPC npc = NPCFactory.factory.query();
+        QuestType type = QuestType.getRandomQuest();
+        int reward = (int) (Math.random() * 100);
+        int requirement = (int) (Math.random() * 10);
+        return new Quest(id, npc, type, reward,
+                requirement, Item.random(), random.nextBoolean());
     }
 
     /**

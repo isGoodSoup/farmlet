@@ -79,4 +79,12 @@ public class QuestLog {
         quests.remove(q);
         Stats.stat().totalQuests++;
     }
+
+    /**
+     * IF the list is empty
+     * @return a {@link Boolean} of the state of the list
+     */
+    public boolean isEmpty() {
+        return quests.isEmpty();
+    }
 }

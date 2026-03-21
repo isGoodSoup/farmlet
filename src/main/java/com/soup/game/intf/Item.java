@@ -21,4 +21,8 @@ public interface Item {
      * @return the item's name
      */
     String getName();
+
+    static Item random() {
+        return this;
+    }
 }
