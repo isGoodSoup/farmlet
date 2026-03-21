@@ -3,6 +3,8 @@ package com.soup.game.swing;
 import com.soup.game.core.Game;
 import com.soup.game.ent.Animal;
 import com.soup.game.service.Localization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,6 +51,7 @@ import java.util.Locale;
  */
 public class SwingFrame extends JFrame {
     private static final String TITLE = "farmlet v2.0";
+    private static final Logger log = LoggerFactory.getLogger(SwingFrame.class);
     private final SwingPanel panel;
 
     /**
@@ -58,6 +61,7 @@ public class SwingFrame extends JFrame {
     public SwingFrame() throws HeadlessException {
         super(TITLE);
         this.panel = new SwingPanel(this);
+        log.info("SwingFrame started");
         Animal.setPanel(panel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);

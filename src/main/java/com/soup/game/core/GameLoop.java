@@ -6,6 +6,8 @@ import com.soup.game.intf.CommandListener;
 import com.soup.game.service.*;
 import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.util.Random;
@@ -47,6 +49,7 @@ public class GameLoop implements CommandListener {
     private static final float HOURS_PER_DAY = 24f;
     private static final float TIME_INCREMENT = 0.2f;
     private static final float DAY_START_HOUR = 6f;
+    private static final Logger log = LoggerFactory.getLogger(GameLoop.class);
 
     private final Game game;
     private final SwingPanel panel;
@@ -131,6 +134,7 @@ public class GameLoop implements CommandListener {
      */
     private void game(String command) {
         executor.run(command);
+        log.debug("Command executed: {}", command);
         env.advanceTime(TIME_INCREMENT);
         if(env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);
@@ -279,6 +283,7 @@ public class GameLoop implements CommandListener {
         panel.append(Localization.lang.t("game.coin", playerCoins),
                 Colors.YELLOW);
         updateHydration();
+        log.info("Sleeping... Balance= {} gold", playerCoins);
         game("");
     }
 }

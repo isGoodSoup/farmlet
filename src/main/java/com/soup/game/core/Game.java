@@ -14,8 +14,11 @@ import com.soup.game.world.Barn;
 import com.soup.game.world.Environment;
 import com.soup.game.world.Farm;
 import com.soup.game.world.Market;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * <h1>farmlet</h1>
@@ -92,6 +95,7 @@ import java.util.List;
 @SuppressWarnings("all")
 public final class Game {
     private static final float HOURS = 24f;
+    private static final Logger log = LoggerFactory.getLogger(Game.class);
     private final SwingPanel panel;
     private final GameLoop gameLoop;
     private final Player player;
@@ -105,6 +109,7 @@ public final class Game {
     private final Executor executor;
 
     public Game(SwingPanel panel) {
+        log.info("Game was created");
         this.panel = panel;
         this.player = new Player(this.panel);
         this.env = new Environment(this.panel);
@@ -140,8 +145,9 @@ public final class Game {
      * </p>
      */
     private void intro() {
+        log.info("Playing intro");
         String intro = Localization.lang.t("game.intro");
-        panel.append(intro + "\n", Colors.BRIGHT_BLUE, 30, () -> {
+        panel.append(intro + "\n", Colors.BRIGHT_WHITE, 30, () -> {
             new Thread(this::start).start();
             panel.focusInput();
         });
@@ -187,6 +193,7 @@ public final class Game {
      */
     public void showEnding() {
         if(Stats.stat().days == 0) { return; }
+        log.info("Ending triggered");
         if(Stats.stat().days > 60) {
             panel.append("\n" + Localization.lang.t("game.end.best", Stats.stat().days),
                     Colors.BRIGHT_GREEN);
@@ -196,8 +203,12 @@ public final class Game {
         } else if(Stats.stat().days < 15) {
             panel.append("\n" + Localization.lang.t("game.end.bad", Stats.stat().days),
                     Colors.BRIGHT_PURPLE);
+        } else if(Stats.stat().days < 15 && Stats.stat().isGameOver) {
+            panel.append("\n" + Localization.lang.t("game.end.worst", Stats.stat().days),
+                    Colors.BRIGHT_PURPLE);
         }
         Stats.stat().showStats(player);
+        log.info("End of session");
     }
 
     /**
@@ -269,12 +280,13 @@ public final class Game {
      *     <li><b>get</b> – Retrieves crop data from the farm using {@code farm.get()}.</li>
      *     <li><b>feed</b> – Feeds all animals in the barn via {@code barn.feedAll()}.</li>
      *     <li><b>pet</b> – Interacts with animals by petting them through {@code barn.pet()}.</li>
+     *     <li><b>quests</b> - Shows the entire questlog {@code player.quests().show()}.</li>
      *     <li><b>view</b> – Updates the game display using {@code gameLoop.update()}.</li>
      *     <li><b>show</b> – Alias for <b>view</b>; refreshes the game screen.</li>
      *     <li><b>inv</b> – Displays the player's inventory via {@code player.inventory().showInventory(player)}.</li>
      *     <li><b>time</b> – Shows the current day and time using {@link Stats#showTime}.</li>
      *     <li><b>sell</b> – Sells all crops in the player's inventory using {@link Market#sellCrops()}.</li>
-     *     <li><b>buy</b> – Opens the market for purchases via {@link Market#buy(Farm)}.</li>
+     *     <li><b>buy</b> – Opens the market for purchases via {@link Market#buy(Farm, Consumer)}.</li>
      *     <li><b>stats</b> – Displays current player stats with {@link Stats#showStats}.</li>
      *     <li><b>sleep</b> – Advances the day and consumes resources as needed using {@code gameLoop.sleep(player.purse())}.</li>
      *     <li><b>end</b> – Placeholder command; currently does nothing.</li>
@@ -286,6 +298,7 @@ public final class Game {
      * </p>
      */
     public void addCommands() {
+        log.info("Registering commands");
         registry.register("?", args -> Stats.stat().showHelp(registry));
         registry.register(".", args -> executor.redo());
         registry.register("give", executor::give);
@@ -301,6 +314,7 @@ public final class Game {
         registry.register("pet", args -> barn.pet());
         registry.register("view", gameLoop::update);
         registry.register("show", args -> gameLoop.update());
+        registry.register("quests", args -> player.quests().show());
         registry.register("inv", args -> player.inventory().showInventory(player));
         registry.register("time", args -> Stats.stat().showTime(env));
         registry.register("sell", args -> market.sellCrops());

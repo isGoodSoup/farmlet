@@ -11,6 +11,8 @@ import com.soup.game.intf.World;
 import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
 import com.soup.game.swing.SwingPanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -41,6 +43,7 @@ import java.util.function.Consumer;
  */
 @World
 public class Market {
+    private static final Logger log = LoggerFactory.getLogger(Market.class);
     private final SwingPanel panel;
     private final GameLoop gameLoop;
     private final Map<Integer, String> market;
@@ -73,18 +76,19 @@ public class Market {
     public void sellCrops() {
         int totalCoin = 0;
 
-        for (Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.inventory()
+        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.inventory()
                 .getAll()).entrySet()) {
             Item item = entry.getKey();
             if(item instanceof CropID c) {
                 int quantity = entry.getValue();
                 totalCoin += c.value() * quantity;
-                for (int i = 0; i < quantity; i++) {
+                for(int i = 0; i < quantity; i++) {
                     player.inventory().remove(c);
                 }
             }
         }
         player.earn(totalCoin);
+        log.info("Selling all crops for {} gold", totalCoin);
         panel.append(Localization.lang.t("game.sold", totalCoin), Colors.YELLOW);
     }
 
@@ -206,5 +210,6 @@ public class Market {
                 panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
             }
         }
+        log.debug("Bought= {}, {}", item,cost);
     }
 }

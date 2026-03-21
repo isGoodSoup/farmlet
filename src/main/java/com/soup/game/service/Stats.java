@@ -6,6 +6,8 @@ import com.soup.game.intf.Item;
 import com.soup.game.intf.Service;
 import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.Environment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -41,6 +43,7 @@ import java.util.Map;
 @SuppressWarnings("all")
 @Service
 public class Stats {
+    private static final Logger log = LoggerFactory.getLogger(Stats.class);
     /** Singleton instance of Stats */
     private static Stats instance;
     private final SwingPanel panel;
@@ -89,6 +92,7 @@ public class Stats {
      * </p>
      */
     public void showStats(Player player) {
+        log.info("Showing stats");
         StringBuilder sb = new StringBuilder("\n"+ Localization.lang.t("game.stats"));
         if(isGameOver) {
             sb.append(", Worst Ending");
@@ -112,6 +116,8 @@ public class Stats {
         panel.append("\n" + Localization.lang.t("game.stats.quests", totalQuests), Colors.BRIGHT_MAGENTA);
         panel.append("\n" + Localization.lang.t("game.stats.level", player.level()), Colors.BRIGHT_MAGENTA);
         panel.append("\n" + Localization.lang.t("game.stats.coin", player.purse()), Colors.BRIGHT_MAGENTA);
+        log.debug("Stats= {},{},{},{},{},{},{}", totalCmd, totalCrops, days, totalWater,
+                totalQuests, player.level(), player.purse());
     }
 
     /**

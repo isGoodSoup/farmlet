@@ -95,6 +95,7 @@ public class SwingPanel extends JPanel {
      * @param frame
      */
     public SwingPanel(JFrame frame) {
+        log.info("SwingPanel was created");
         this.frame = frame;
         this.gameLog = new JTextPane();
         this.scrollPane = new JScrollPane(gameLog);

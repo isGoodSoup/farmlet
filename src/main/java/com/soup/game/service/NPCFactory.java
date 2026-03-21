@@ -2,6 +2,8 @@ package com.soup.game.service;
 
 import com.soup.game.ent.NPC;
 import com.soup.game.intf.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +40,7 @@ public class NPCFactory {
     public static final NPCFactory factory = new NPCFactory();
     private static final List<NPC> npcs = new ArrayList<>();
     private static final Random random = new Random();
+    private static final Logger log = LoggerFactory.getLogger(NPCFactory.class);
 
     /**
      * Populates the internal NPC pool.
@@ -49,9 +52,11 @@ public class NPCFactory {
      */
     public void build() {
         npcs.clear();
+        log.info("Creating NPCs");
         for(int i = 0; i < 16; i++) {
             npcs.add(new NPC());
         }
+        log.debug("NPCs created successfully");
     }
 
     /**

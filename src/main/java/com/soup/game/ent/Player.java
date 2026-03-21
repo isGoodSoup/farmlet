@@ -8,6 +8,8 @@ import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
 import com.soup.game.swing.SwingPanel;
 import com.soup.game.world.QuestLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import java.util.List;
  */
 @Entity(type = "player")
 public class Player {
+    private static final Logger log = LoggerFactory.getLogger(Player.class);
     private final SwingPanel panel;
     private final String title;
     private final String name;
@@ -39,6 +42,7 @@ public class Player {
      * Initializes the inventory, sets the level to 1, and experience to 0.
      */
     public Player(SwingPanel panel) {
+        log.info("Player was created");
         this.panel = panel;
         this.name = Paths.get(System.getProperty("user.home"))
                 .getFileName().toString();
@@ -73,6 +77,7 @@ public class Player {
      * @param experience is the amount of updated experience
      */
     public void update(int experience) {
+        log.info("Updating player");
         add(experience);
         while(this.experience >= nextLevel) {
             this.experience -= nextLevel;
@@ -111,6 +116,7 @@ public class Player {
     }
 
     public void add(Upgrades e) {
+        log.info("New upgrade= {}", e.name());
         upgrades.add(e);
     }
 
@@ -119,6 +125,7 @@ public class Player {
     }
 
     public void remove(Upgrades e) {
+        log.info("Removing upgrade= {}", e.name());
         upgrades.remove(e);
     }
 
@@ -140,6 +147,7 @@ public class Player {
     public void levelUp() {
         if(Gamerule.isEnabled(Gamerule.ENABLE_LEVEL_UP)) {
             this.level += 1;
+            log.info("Level up to: {} ", level);
         }
     }
 
@@ -158,6 +166,7 @@ public class Player {
     public void add(int experience) {
         if(Gamerule.isEnabled(Gamerule.ENABLE_EXPERIENCE)) {
             this.experience += experience;
+            log.info("Experience gained= {}", experience);
         }
     }
 

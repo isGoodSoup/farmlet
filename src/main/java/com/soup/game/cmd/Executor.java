@@ -9,6 +9,8 @@ import com.soup.game.intf.Command;
 import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
 import com.soup.game.swing.SwingPanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -65,6 +67,7 @@ import java.util.function.Consumer;
  * @since 1.9
  */
 public class Executor implements Command {
+    private static final Logger log = LoggerFactory.getLogger(Executor.class);
     private final SwingPanel panel;
     private final Player player;
     private final Parser parser;
@@ -81,11 +84,13 @@ public class Executor implements Command {
     }
 
     /**
-     * Reads user input from the console, parses and executes commands until a
-     * terminating semicolon (";") is entered or a command triggers a sleep condition.
-     * Commands can be chained using "&&"; each command is looked up in the console's
+     * Reads user input from the console, parses and executes commands until a command
+     * triggers a sleep condition.
+     * <p>
+     * Commands can be chained using ","; each command is looked up in the console's
      * command map and executed if found. Unknown commands are reported in red. Updates
      * {@link #totalCmd} and {@link #lastCommand} for each executed command.
+     * </p>
      *
      * @see #doSleep()
      */
@@ -96,7 +101,7 @@ public class Executor implements Command {
         lastCommand = line;
         totalCmd++;
 
-        String[] chain = line.split("\\s*&&\\s*");
+        String[] chain = line.split("\\s*,\\s*");
         for (String cmd : chain) {
             cmd = cmd.trim();
             if (cmd.isEmpty()) continue;
@@ -129,6 +134,7 @@ public class Executor implements Command {
      * @see #letter(int)
      */
     private void runFor(int times, String[] bodyTokens, Map<String, Integer> indices, int depth) {
+        log.info("Running for-loop");
         for(int i = 0; i < times; i++) {
             indices.put(letter(depth), i);
             execute(bodyTokens, 0, indices, depth + 1);
@@ -169,6 +175,7 @@ public class Executor implements Command {
      * @see #replace(String[], Map)
      */
     private void execute(String[] tokens, int pos, Map<String, Integer> indices, int depth) {
+        log.debug("Executing action");
         if(pos >= tokens.length) { return; }
         String token = tokens[pos];
 

@@ -9,6 +9,8 @@ import com.soup.game.intf.World;
 import com.soup.game.service.Colors;
 import com.soup.game.service.Localization;
 import com.soup.game.swing.SwingPanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -61,6 +63,7 @@ import java.util.*;
  */
 @World(entity = "barn")
 public class Barn {
+    private static final Logger log = LoggerFactory.getLogger(Barn.class);
     private final SwingPanel panel;
     private final List<Animal> animals;
     private final Player player;
@@ -127,6 +130,7 @@ public class Barn {
      * @see AnimalType
      */
     private void populate() {
+        log.info("Populating barn with:");
         List<AnimalType> types = new ArrayList<>(Arrays.asList(AnimalType.values()));
         animals.add(new Dog(Animal.name()));
         animals.add(new Dog(Animal.name()));
@@ -145,6 +149,10 @@ public class Barn {
             }
         }
         Collections.shuffle(animals);
+
+        for(Animal a : animals) {
+            log.debug("{} the {}", a.getName(), a.getLocalizedName());
+        }
     }
 
     /**

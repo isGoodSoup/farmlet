@@ -5,6 +5,8 @@ import com.soup.game.enums.*;
 import com.soup.game.intf.World;
 import com.soup.game.service.*;
 import com.soup.game.swing.SwingPanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +71,7 @@ import java.util.Objects;
 @SuppressWarnings("all")
 @World(entity = "farm")
 public class Farm {
+    private static final Logger log = LoggerFactory.getLogger(Farm.class);
     private final SwingPanel panel;
     private final List<List<Tile>> tiles;
     private final Player player;
@@ -158,6 +161,7 @@ public class Farm {
             return;
         }
 
+        log.info("Repopulating grid");
         for(List<Tile> row : tiles) {
             int currentCols = row.size();
             if(currentCols < cols) {
@@ -310,6 +314,7 @@ public class Farm {
         tile.crop().resetYieldBonus();
         panel.append(Localization.lang.t("game.harvest.success",
                 tile.crop().getId().getName(), row, col), Colors.BRIGHT_GREEN);
+        log.debug("Harvest={}, {}", row, col);
         player.update(tile.crop().getId().getXp());
     }
 
@@ -422,6 +427,7 @@ public class Farm {
 
         set(row, col, new Tile(new Crop(CropID.id.random(env.getSeason())),
                 Soil.SILT, Fertilizer.NONE));
+        log.debug("Plant={}, {}", row, col);
         panel.append(Localization.lang.t("game.plant.success", row, col),
                 Colors.BRIGHT_GREEN);
     }
@@ -549,6 +555,7 @@ public class Farm {
         Tile tile = get(row, col).withFertilizer(fertilizer);
         set(row, col, tile);
         player.inventory().remove(fertilizer);
+        log.debug("Fertilized={}, {}", row, col);
         panel.append(Localization.lang.t("game.fertilize.success", row, col),
                 Colors.BRIGHT_GREEN);
     }
@@ -593,6 +600,7 @@ public class Farm {
         Tile tile = get(row, col);
         if(tile != null && tile.crop() != null) {
             String id = tile.crop().getId().getName();
+            log.debug("Crop={}, {} is {}", row, col, id);
             panel.append(Localization.lang.t("game.get_crop", id, row, col),
                     Colors.MAGENTA);
         }
@@ -635,6 +643,7 @@ public class Farm {
         }
 
         set(row, col, null);
+        log.debug("Ripped={}, {}", row, col);
         panel.append(Localization.lang.t("game.rip.success", row, col),
                 Colors.BRIGHT_GREEN);
     }
@@ -689,6 +698,8 @@ public class Farm {
             }
             player.water(-0.1f);
             Stats.stat().totalWater += 0.1f;
+            log.debug("Water={}, {} on {}", Integer.parseInt(args[1]), Integer.parseInt(args[2]),
+                    tile.crop().getId().name());
             panel.append(Localization.lang.t("game.irrigate.success", player.can()),
                     Colors.BRIGHT_GREEN);
         } else {
