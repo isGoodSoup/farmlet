@@ -698,8 +698,10 @@ public class Farm {
             }
             player.water(-0.1f);
             Stats.stat().totalWater += 0.1f;
-            log.debug("Water={}, {} on {}", Integer.parseInt(args[1]), Integer.parseInt(args[2]),
-                    tile.crop().getId().name());
+            if(tile != null) {
+                log.debug("Water={}, {} on {}", Integer.parseInt(args[1]), Integer.parseInt(args[2]),
+                        tile.crop().getId().name());
+            }
             panel.append(Localization.lang.t("game.irrigate.success", player.can()),
                     Colors.BRIGHT_GREEN);
         } else {
