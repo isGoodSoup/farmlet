@@ -76,7 +76,7 @@ public class Farm {
     private final List<List<Tile>> tiles;
     private final Player player;
     private final Environment env;
-    private final int SIZE = 3;
+    private final int SIZE = 1;
     private List<Pos> positions;
 
     /**
